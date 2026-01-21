@@ -25,12 +25,12 @@ class CatalogRepository {
     int offset = 0,
   }) async {
     try {
-      final q = _client
+      // NOTE: keep this typed as dynamic so Postgrest filter extensions (eq/ilike)
+      // are available across supabase_flutter versions used in CI (Vercel).
+      final dynamic q = _client
           .from('products')
           .select('*, categories!inner(key)')
-          .eq('is_active', true)
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+          .eq('is_active', true);
 
       if (categoryKey != null && categoryKey.isNotEmpty) {
         q.eq('categories.key', categoryKey);
@@ -40,7 +40,7 @@ class CatalogRepository {
         q.ilike('name', '%${query.trim()}%');
       }
 
-      final rows = await q;
+      final rows = await q.order('created_at', ascending: false).range(offset, offset + limit - 1);
       return (rows as List).cast<Map<String, dynamic>>().map(Product.fromJson).toList();
     } on PostgrestException catch (e) {
       throw AppException(e.message, cause: e);
