@@ -88,6 +88,19 @@ if [[ $BUILD_EXIT_CODE -ne 0 ]]; then
   exit 1
 fi
 
+# Some CI environments have been observed to print compile errors while still returning exit code 0.
+# Treat this as a hard failure so we don't deploy a broken bundle (blank screen).
+if grep -q "Failed to compile application for the Web" build.log; then
+  echo "ERROR: Flutter reported 'Failed to compile application for the Web' (even though exit code was 0)"
+  echo ""
+  echo "=== First occurrence context ==="
+  grep -n "Failed to compile application for the Web" -n build.log | head -1 || true
+  echo ""
+  echo "=== Last 120 lines of build log ==="
+  tail -120 build.log
+  exit 1
+fi
+
 echo "==> Build completed successfully. Output in build/web"
 ls -la build/web/ | head -10
 
