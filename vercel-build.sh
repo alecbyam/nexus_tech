@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
 # Vercel build script pour Flutter Web.
 # - Télécharge Flutter (stable)
@@ -10,34 +10,60 @@ set -euo pipefail
 
 FLUTTER_VERSION="${FLUTTER_VERSION:-stable}"
 
-echo "==> Generating .env from Vercel Environment Variables"
-# Vercel injecte les variables dans l'environnement du build.
-# Flutter lit .env via flutter_dotenv (asset), donc on le génère ici.
-: "${SUPABASE_URL:?Missing SUPABASE_URL in Vercel Environment Variables}"
-: "${SUPABASE_ANON_KEY:?Missing SUPABASE_ANON_KEY in Vercel Environment Variables}"
-: "${WHATSAPP_PHONE:?Missing WHATSAPP_PHONE in Vercel Environment Variables}"
+echo "==> Checking environment variables..."
+if [[ -z "${SUPABASE_URL:-}" ]]; then
+  echo "ERROR: SUPABASE_URL is not set in Vercel Environment Variables"
+  exit 1
+fi
+if [[ -z "${SUPABASE_ANON_KEY:-}" ]]; then
+  echo "ERROR: SUPABASE_ANON_KEY is not set in Vercel Environment Variables"
+  exit 1
+fi
+if [[ -z "${WHATSAPP_PHONE:-}" ]]; then
+  echo "ERROR: WHATSAPP_PHONE is not set in Vercel Environment Variables"
+  exit 1
+fi
 
+echo "==> Generating .env from Vercel Environment Variables"
 cat > .env <<EOF
 SUPABASE_URL=${SUPABASE_URL}
 SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
 WHATSAPP_PHONE=${WHATSAPP_PHONE}
 EOF
+echo ".env file created successfully"
 
 echo "==> Installing Flutter ($FLUTTER_VERSION)"
 if [[ ! -d ".flutter" ]]; then
-  git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git .flutter
+  echo "Cloning Flutter repository..."
+  git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git .flutter || {
+    echo "ERROR: Failed to clone Flutter repository"
+    exit 1
+  }
+else
+  echo "Flutter already installed, skipping clone"
 fi
 
 export PATH="$PWD/.flutter/bin:$PATH"
 
-flutter --version
+echo "==> Flutter version:"
+flutter --version || {
+  echo "ERROR: Flutter not found in PATH"
+  exit 1
+}
 
-echo "==> Pub get"
-flutter pub get
+echo "==> Running flutter pub get"
+flutter pub get || {
+  echo "ERROR: flutter pub get failed"
+  exit 1
+}
 
-echo "==> Build web release"
-flutter build web --release
+echo "==> Building web release"
+flutter build web --release || {
+  echo "ERROR: flutter build web --release failed"
+  exit 1
+}
 
-echo "==> Done. Output in build/web"
+echo "==> Build completed successfully. Output in build/web"
+ls -la build/web/ | head -10
 
 
