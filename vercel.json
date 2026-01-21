@@ -1,36 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|wasm|bin))",
-      "destination": "/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
   "buildCommand": "bash ./vercel-build.sh",
-  "outputDirectory": "build/web",
-  "headers": [
-    {
-      "source": "/(.*\\.js)",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.wasm)",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        }
-      ]
-    }
-  ]
+  "outputDirectory": "build/web"
 }
 
 
