@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/admin/presentation/admin_home_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
@@ -21,15 +20,9 @@ import '../providers/supabase_providers.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Réagit aux changements d'auth pour refresh les redirections.
-  final authAsync = ref.watch(authStateChangesProvider);
-  
-  // Créer un stream simple pour GoRouterRefreshStream
-  Stream<AuthState> authStream = authAsync.when(
-    data: (d) => Stream.value(d),
-    error: (_, __) => Stream.value(AuthState(session: null, event: AuthChangeEvent.signedOut)),
-    loading: () => Stream.value(AuthState(session: null, event: AuthChangeEvent.initialSession)),
-  );
+  // IMPORTANT (web): ne pas "fabriquer" des AuthState à la main.
+  // On se branche directement sur le stream Supabase, ce qui évite des erreurs de compilation/runtime.
+  final authStream = ref.watch(authStateChangesProvider.stream);
 
   return GoRouter(
     initialLocation: AppRoutes.home,
