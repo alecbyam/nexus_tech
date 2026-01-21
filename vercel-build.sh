@@ -86,6 +86,18 @@ if grep -qi "Failed to compile application for the Web" build.log || [[ $BUILD_E
   echo ""
   echo "Exit code: $BUILD_EXIT_CODE"
   echo ""
+  echo "=== First error context (best effort) ==="
+  FIRST_ERR_LINE="$(grep -ni -m1 "error|exception|failed|undefined|isn't defined|not found" build.log | cut -d: -f1)"
+  if [[ -n "${FIRST_ERR_LINE:-}" ]]; then
+    START=$((FIRST_ERR_LINE - 25))
+    END=$((FIRST_ERR_LINE + 60))
+    if [[ $START -lt 1 ]]; then START=1; fi
+    echo "First match at line: $FIRST_ERR_LINE"
+    sed -n "${START},${END}p" build.log || true
+  else
+    echo "Could not detect first error line via grep."
+  fi
+  echo ""
   echo "=== Searching for compilation errors ==="
   grep -i "error\|failed\|exception" build.log | tail -30 || echo "No errors found in grep"
   echo ""
