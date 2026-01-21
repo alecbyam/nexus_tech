@@ -12,21 +12,25 @@ class AppEnv {
   });
 
   factory AppEnv.fromDotEnv() {
-    final url = dotenv.env['SUPABASE_URL'];
-    final anon = dotenv.env['SUPABASE_ANON_KEY'];
-    final whatsapp = dotenv.env['WHATSAPP_PHONE'];
+    try {
+      final url = dotenv.env['SUPABASE_URL']?.trim();
+      final anon = dotenv.env['SUPABASE_ANON_KEY']?.trim();
+      final whatsapp = dotenv.env['WHATSAPP_PHONE']?.trim();
 
-    if (url == null || url.isEmpty) {
-      throw StateError('SUPABASE_URL manquant dans .env');
-    }
-    if (anon == null || anon.isEmpty) {
-      throw StateError('SUPABASE_ANON_KEY manquant dans .env');
-    }
-    if (whatsapp == null || whatsapp.isEmpty) {
-      throw StateError('WHATSAPP_PHONE manquant dans .env');
-    }
+      if (url == null || url.isEmpty) {
+        throw StateError('SUPABASE_URL manquant dans .env');
+      }
+      if (anon == null || anon.isEmpty) {
+        throw StateError('SUPABASE_ANON_KEY manquant dans .env');
+      }
+      if (whatsapp == null || whatsapp.isEmpty) {
+        throw StateError('WHATSAPP_PHONE manquant dans .env');
+      }
 
-    return AppEnv(supabaseUrl: url, supabaseAnonKey: anon, whatsappPhone: whatsapp);
+      return AppEnv(supabaseUrl: url, supabaseAnonKey: anon, whatsappPhone: whatsapp);
+    } catch (e) {
+      throw StateError('Erreur chargement .env: $e');
+    }
   }
 }
 

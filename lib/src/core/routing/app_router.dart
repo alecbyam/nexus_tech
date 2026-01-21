@@ -21,17 +21,18 @@ import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Réagit aux changements d'auth pour refresh les redirections.
-  final auth = ref.watch(authStateChangesProvider);
+  final authAsync = ref.watch(authStateChangesProvider);
+  
+  // Créer un stream simple pour GoRouterRefreshStream
+  Stream<AuthState> authStream = authAsync.when(
+    data: (d) => Stream.value(d),
+    error: (_, __) => Stream.value(AuthState(session: null, event: AuthChangeEvent.signedOut)),
+    loading: () => Stream.value(AuthState(session: null, event: AuthChangeEvent.initialSession)),
+  );
 
   return GoRouter(
     initialLocation: AppRoutes.home,
-    refreshListenable: GoRouterRefreshStream(
-      auth.when(
-        data: (d) => Stream.value(d),
-        error: (_, __) => const Stream.empty(),
-        loading: () => const Stream.empty(),
-      ),
-    ),
+    refreshListenable: GoRouterRefreshStream(authStream),
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final isAuthed = session != null;
