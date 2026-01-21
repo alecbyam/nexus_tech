@@ -1,6 +1,6 @@
-# NEXUS TECH — E-commerce Flutter (Android, iOS, Web) + Supabase
+# NEXUS TECH — E-commerce Flutter Web + Supabase
 
-Application e-commerce cross-platform **NEXUS TECH** (mobile + web) pour vendre :
+Application e-commerce **100% web** **NEXUS TECH** (accessible via nom de domaine, optimisée mobile-first) pour vendre :
 - coques de téléphone
 - accessoires téléphone
 - ordinateurs
@@ -55,14 +55,13 @@ flutter build web --release
 
 ## 5) Optimisations mobile (Web)
 
-L'app est **optimisée mobile-first** :
+L'app est **100% web** mais **optimisée mobile-first** pour une excellente expérience sur smartphones :
 - **Touch targets** : minimum 56px (recommandation Material Design)
 - **Responsive breakpoints** : mobile (<600px), tablette (600-1024px), desktop (>1024px)
 - **Boutons grands** : facile à cliquer sur petits écrans
 - **Spacing adaptatif** : padding/marges ajustés selon la taille d'écran
 - **Low-bandwidth friendly** : images lazy-loaded, pas de ressources lourdes
-
-Note : même si c’est “Web”, l’app peut être **ajoutée à l’écran d’accueil** comme une PWA (optionnel).
+- **PWA-ready** : peut être ajoutée à l'écran d'accueil mobile (via manifest.json)
 
 ## 6) Comptes & rôles admin
 

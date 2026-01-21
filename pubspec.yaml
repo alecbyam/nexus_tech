@@ -1,5 +1,5 @@
 name: nexus_tech
-description: NEXUS TECH - E-commerce cross-platform (Android, iOS, Web) + Supabase
+description: NEXUS TECH - E-commerce web application (100% web, accessible via domaine) + Supabase
 publish_to: "none"
 version: 1.0.0+1
 
@@ -29,11 +29,10 @@ dependencies:
   # Images & caching
   cached_network_image: ^3.3.1
 
-  # UX
-  flutter_native_splash: ^2.4.1
+  # UX (web-compatible)
   url_launcher: ^6.3.0
   file_picker: ^8.0.6
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.2.3  # Works on web (localStorage)
 
 dev_dependencies:
   flutter_test:
