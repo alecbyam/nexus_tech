@@ -128,7 +128,8 @@ class ProductDetailScreen extends ConsumerWidget {
     );
     final url = Uri.parse('https://wa.me/${env.whatsappPhone}?text=$message');
 
-    final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+    // Web-safe: on web this opens a new tab; on mobile it uses the platform handler.
+    final ok = await launchUrl(url, mode: LaunchMode.platformDefault);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible d’ouvrir WhatsApp.')),

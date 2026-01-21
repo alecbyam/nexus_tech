@@ -207,7 +207,8 @@ Future<void> _openWhatsApp(String message) async {
   final env = AppEnv.fromDotEnv();
   final encoded = Uri.encodeComponent(message);
   final url = Uri.parse('https://wa.me/${env.whatsappPhone}?text=$encoded');
-  await launchUrl(url, mode: LaunchMode.externalApplication);
+  // Web-safe: on web this opens a new tab; on mobile it uses the platform handler.
+  await launchUrl(url, mode: LaunchMode.platformDefault);
 }
 
 Future<String?> _askNote(BuildContext context) async {
