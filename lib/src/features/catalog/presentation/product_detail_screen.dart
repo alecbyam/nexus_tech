@@ -19,9 +19,9 @@ class ProductDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final id = productId;
     if (id == null || id.isEmpty) {
-      return AppScaffold(
+      return const AppScaffold(
         title: 'Détail produit',
-        child: const Center(child: Text('Produit introuvable.')),
+        child: Center(child: Text('Produit introuvable.')),
       );
     }
     final product = ref.watch(productProvider(id));

@@ -94,7 +94,7 @@ class _OrderItemTile extends StatelessWidget {
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text('x$qty • \$${unit}', style: const TextStyle(color: AppColors.muted)),
+                Text('x$qty • \$$unit', style: const TextStyle(color: AppColors.muted)),
               ],
             ),
           ),

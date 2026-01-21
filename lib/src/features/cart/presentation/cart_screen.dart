@@ -140,7 +140,8 @@ class CartScreen extends ConsumerWidget {
                             items: cart.items,
                             note: note == null || note.trim().isEmpty ? null : '[WHATSAPP] ${note.trim()}',
                           );
-                      if (id != null && context.mounted) {
+                      if (!context.mounted) return;
+                      if (id != null) {
                         final message = WhatsAppOrderMessage.build(
                           storeName: 'NEXUS TECH',
                           orderId: id,
@@ -158,7 +159,7 @@ class CartScreen extends ConsumerWidget {
                           SnackBar(content: Text('Commande créée: $id')),
                         );
                         context.push(AppRoutes.orders);
-                      } else if (checkout.error != null && context.mounted) {
+                      } else if (checkout.error != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(checkout.error!)),
                         );
@@ -178,14 +179,15 @@ class CartScreen extends ConsumerWidget {
                             currency: cart.currency,
                             items: cart.items,
                           );
-                      if (id != null && context.mounted) {
+                      if (!context.mounted) return;
+                      if (id != null) {
                         await ref.read(cartControllerProvider.notifier).clear();
                         ref.invalidate(myOrdersProvider);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Commande créée: $id')),
                         );
                         context.push(AppRoutes.orders);
-                      } else if (checkout.error != null && context.mounted) {
+                      } else if (checkout.error != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(checkout.error!)),
                         );
