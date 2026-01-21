@@ -71,33 +71,30 @@ grep -A 5 "assets:" pubspec.yaml || echo "WARNING: No assets section found"
 echo "==> Running flutter analyze"
 flutter analyze || echo "WARNING: flutter analyze found issues (continuing anyway)"
 
-echo "==> Building web release"
+echo "==> Building web release (capturing full output)"
 set +e  # Temporarily disable exit on error to capture full output
 flutter build web --release 2>&1 | tee build.log
 BUILD_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
-if [[ $BUILD_EXIT_CODE -ne 0 ]]; then
-  echo "ERROR: flutter build web --release failed with exit code $BUILD_EXIT_CODE"
+# Check for compilation failure message (even if exit code is 0)
+if grep -qi "Failed to compile application for the Web" build.log || [[ $BUILD_EXIT_CODE -ne 0 ]]; then
   echo ""
-  echo "=== Last 100 lines of build log ==="
-  tail -100 build.log
+  echo "=========================================="
+  echo "BUILD FAILED - DETAILED ERROR LOG"
+  echo "=========================================="
   echo ""
-  echo "=== Searching for ERROR in build log ==="
-  grep -i "error" build.log | tail -20 || echo "No 'error' found in log"
-  exit 1
-fi
-
-# Some CI environments have been observed to print compile errors while still returning exit code 0.
-# Treat this as a hard failure so we don't deploy a broken bundle (blank screen).
-if grep -q "Failed to compile application for the Web" build.log; then
-  echo "ERROR: Flutter reported 'Failed to compile application for the Web' (even though exit code was 0)"
+  echo "Exit code: $BUILD_EXIT_CODE"
   echo ""
-  echo "=== First occurrence context ==="
-  grep -n "Failed to compile application for the Web" -n build.log | head -1 || true
+  echo "=== Searching for compilation errors ==="
+  grep -i "error\|failed\|exception" build.log | tail -30 || echo "No errors found in grep"
   echo ""
-  echo "=== Last 120 lines of build log ==="
-  tail -120 build.log
+  echo "=== Last 150 lines of build log ==="
+  tail -150 build.log
+  echo ""
+  echo "=== Full build.log file size ==="
+  wc -l build.log || echo "Could not count lines"
+  echo ""
   exit 1
 fi
 
