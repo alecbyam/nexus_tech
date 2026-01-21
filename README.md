@@ -1,6 +1,6 @@
 # NEXUS TECH — E-commerce Flutter Web + Supabase
 
-Application e-commerce **100% web** **NEXUS TECH** (accessible via nom de domaine, optimisée mobile-first) pour vendre :
+Application e-commerce **100% web** **NEXUS TECH** (hébergée + accessible via nom de domaine, optimisée mobile-first) pour vendre :
 - coques de téléphone
 - accessoires téléphone
 - ordinateurs
@@ -34,7 +34,10 @@ Notes :
 - `WHATSAPP_PHONE` au format international (sans `+`).
 - **Ne mets jamais `DATABASE_URL` / `DIRECT_URL` / mot de passe Postgres dans l’app Flutter** (c’est serveur uniquement).
 
-Un exemple prêt à copier est fourni dans `config/env.example.txt`.
+Variables attendues :
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `WHATSAPP_PHONE`
 
 ## 4) Lancer l’app (web)
 

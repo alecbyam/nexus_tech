@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.6
+  cupertino_icons: ^1.0.6 # ok for web (icons)
 
   # State management + architecture
   flutter_riverpod: ^2.5.1
