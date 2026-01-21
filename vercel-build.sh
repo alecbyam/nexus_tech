@@ -57,11 +57,36 @@ flutter pub get || {
   exit 1
 }
 
-echo "==> Building web release"
-flutter build web --release || {
-  echo "ERROR: flutter build web --release failed"
+echo "==> Verifying .env file exists"
+if [[ ! -f ".env" ]]; then
+  echo "ERROR: .env file not found after generation"
   exit 1
-}
+fi
+echo ".env file content (first 3 lines):"
+head -3 .env
+
+echo "==> Verifying pubspec.yaml assets"
+grep -A 5 "assets:" pubspec.yaml || echo "WARNING: No assets section found"
+
+echo "==> Running flutter analyze"
+flutter analyze || echo "WARNING: flutter analyze found issues (continuing anyway)"
+
+echo "==> Building web release"
+set +e  # Temporarily disable exit on error to capture full output
+flutter build web --release 2>&1 | tee build.log
+BUILD_EXIT_CODE=$?
+set -e  # Re-enable exit on error
+
+if [[ $BUILD_EXIT_CODE -ne 0 ]]; then
+  echo "ERROR: flutter build web --release failed with exit code $BUILD_EXIT_CODE"
+  echo ""
+  echo "=== Last 100 lines of build log ==="
+  tail -100 build.log
+  echo ""
+  echo "=== Searching for ERROR in build log ==="
+  grep -i "error" build.log | tail -20 || echo "No 'error' found in log"
+  exit 1
+fi
 
 echo "==> Build completed successfully. Output in build/web"
 ls -la build/web/ | head -10
