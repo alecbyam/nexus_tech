@@ -72,23 +72,23 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           Commande #{order.id.slice(0, 8)}
         </h1>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm text-gray-500">Date</p>
-              <p className="font-semibold">
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6 border border-gray-100">
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="p-4 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl">
+              <p className="text-sm text-gray-600 font-semibold mb-2">Date de commande</p>
+              <p className="font-bold text-gray-900 text-lg">
                 {format(new Date(order.created_at), 'PPpp', { locale: fr })}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Statut</p>
+            <div className="p-4 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl">
+              <p className="text-sm text-gray-600 font-semibold mb-2">Statut</p>
               <span
-                className={`inline-block px-3 py-1 rounded-full text-sm ${
+                className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
                   order.status === 'completed'
-                    ? 'bg-green-100 text-green-800'
+                    ? 'bg-gradient-to-r from-green-400 to-green-500 text-white shadow-lg'
                     : order.status === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-800'
                 }`}
               >
                 {order.status}
@@ -97,33 +97,39 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           </div>
 
           {order.customer_note && (
-            <div className="mb-6">
-              <p className="text-sm text-gray-500 mb-1">Note</p>
-              <p className="text-gray-900">{order.customer_note}</p>
+            <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+              <p className="text-sm text-yellow-800 font-semibold mb-2">📝 Note client</p>
+              <p className="text-gray-900 font-medium">{order.customer_note}</p>
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Articles</h2>
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="flex justify-between py-4 border-b last:border-0">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <h2 className="text-2xl font-black text-gray-900 mb-6">Articles commandés</h2>
+          <div className="space-y-4 mb-6">
+            {items.map((item, index) => (
+              <div 
+                key={item.id} 
+                className="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-200"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <div>
-                  <p className="font-semibold text-gray-900">{item.name_snapshot}</p>
-                  <p className="text-sm text-gray-500">
-                    Quantité: {item.quantity} × ${(item.price_cents_snapshot / 100).toFixed(2)}
+                  <p className="font-bold text-gray-900 text-lg mb-1">{item.name_snapshot}</p>
+                  <p className="text-sm text-gray-600 font-medium">
+                    {item.quantity} × ${(item.price_cents_snapshot / 100).toFixed(2)}
                   </p>
                 </div>
-                <p className="font-bold text-gray-900">
+                <p className="font-black text-xl text-gray-900">
                   ${((item.price_cents_snapshot * item.quantity) / 100).toFixed(2)}
                 </p>
               </div>
             ))}
           </div>
-          <div className="mt-6 pt-6 border-t flex justify-between text-xl font-bold">
-            <span>Total</span>
-            <span>${(order.total_cents / 100).toFixed(2)}</span>
+          <div className="mt-6 pt-6 border-t-2 border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary-50 to-blue-50 p-6 rounded-xl">
+            <span className="text-2xl font-black text-gray-900">Total</span>
+            <span className="text-3xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+              ${(order.total_cents / 100).toFixed(2)}
+            </span>
           </div>
         </div>
       </main>

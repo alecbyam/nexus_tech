@@ -66,13 +66,14 @@ export default function CartPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">Votre panier est vide</p>
+          <div className="text-center py-16 animate-fade-in">
+            <div className="text-7xl mb-6">🛒</div>
+            <p className="text-gray-500 text-xl mb-6 font-semibold">Votre panier est vide</p>
             <a
               href="/catalog"
-              className="text-primary-500 hover:underline font-semibold"
+              className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Voir le catalogue
+              Découvrir le catalogue
             </a>
           </div>
         </main>
@@ -84,7 +85,14 @@ export default function CartPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Panier</h1>
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
+            Panier
+          </h1>
+          <p className="text-gray-600 text-lg">
+            {items.length} {items.length === 1 ? 'article' : 'articles'} dans votre panier
+          </p>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-4">

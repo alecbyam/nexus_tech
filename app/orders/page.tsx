@@ -57,43 +57,45 @@ export default function OrdersPage() {
             <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">Aucune commande</p>
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">📦</div>
+            <p className="text-gray-500 text-xl mb-6 font-semibold">Aucune commande</p>
             <Link
               href="/catalog"
-              className="text-primary-500 hover:underline font-semibold"
+              className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Voir le catalogue
+              Découvrir le catalogue
             </Link>
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {orders.map((order, index) => (
               <Link
                 key={order.id}
                 href={`/orders/${order.id}`}
-                className="block bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 card-hover"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-semibold text-gray-900">
-                      Commande #{order.id.slice(0, 8)}
+                    <p className="font-black text-gray-900 text-lg mb-1">
+                      Commande #{order.id.slice(0, 8).toUpperCase()}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-medium">
                       {format(new Date(order.created_at), 'PPpp', { locale: fr })}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">
+                    <p className="font-black text-2xl text-gray-900 mb-2">
                       ${(order.total_cents / 100).toFixed(2)}
                     </p>
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-sm mt-2 ${
+                      className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
                         order.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-gradient-to-r from-green-400 to-green-500 text-white shadow-lg'
                           : order.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white shadow-lg'
+                          : 'bg-gray-200 text-gray-800'
                       }`}
                     >
                       {order.status}

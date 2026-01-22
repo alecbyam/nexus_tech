@@ -49,8 +49,13 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Catalogue</h1>
+        <div className="mb-10 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
+            Catalogue
+          </h1>
+          <p className="text-gray-600 mb-6 text-lg">
+            Découvrez notre sélection de produits tech
+          </p>
           <SearchBar initialSearch={search} initialCategory={category} />
         </div>
 
