@@ -73,9 +73,16 @@ flutter analyze || echo "WARNING: flutter analyze found issues (continuing anywa
 
 echo "==> Building web release (capturing full output)"
 set +e  # Temporarily disable exit on error to capture full output
-flutter build web --release 2>&1 | tee build.log
+# Capture both stdout and stderr, and ensure we see all output
+flutter build web --release --verbose 2>&1 | tee build.log
 BUILD_EXIT_CODE=$?
 set -e  # Re-enable exit on error
+
+# Also check if build/web was actually created
+if [[ ! -d "build/web" ]] || [[ -z "$(ls -A build/web 2>/dev/null)" ]]; then
+  echo "WARNING: build/web directory is missing or empty after build"
+  BUILD_EXIT_CODE=1
+fi
 
 # Check for compilation failure message (even if exit code is 0)
 if grep -qi "Failed to compile application for the Web" build.log || [[ $BUILD_EXIT_CODE -ne 0 ]]; then
@@ -87,16 +94,24 @@ if grep -qi "Failed to compile application for the Web" build.log || [[ $BUILD_E
   echo "Exit code: $BUILD_EXIT_CODE"
   echo ""
   echo "=== First error context (best effort) ==="
-  FIRST_ERR_LINE="$(grep -niE -m1 "(error|exception|failed|undefined|isn't defined|not found)" build.log | head -1 | cut -d: -f1)"
+  # Try multiple patterns to find the first error
+  FIRST_ERR_LINE=""
+  for pattern in "error •" "Error:" "ERROR" "undefined" "isn't defined" "not found" "Failed to compile" "Exception"; do
+    FIRST_ERR_LINE="$(grep -ni -m1 "$pattern" build.log | head -1 | cut -d: -f1)"
+    if [[ -n "${FIRST_ERR_LINE:-}" && "${FIRST_ERR_LINE}" =~ ^[0-9]+$ ]]; then
+      break
+    fi
+  done
+  
   if [[ -n "${FIRST_ERR_LINE:-}" && "${FIRST_ERR_LINE}" =~ ^[0-9]+$ ]]; then
-    START=$((FIRST_ERR_LINE - 25))
-    END=$((FIRST_ERR_LINE + 60))
+    START=$((FIRST_ERR_LINE - 20))
+    END=$((FIRST_ERR_LINE + 50))
     if [[ $START -lt 1 ]]; then START=1; fi
-    echo "First match at line: $FIRST_ERR_LINE"
+    echo "First error match at line: $FIRST_ERR_LINE"
     sed -n "${START},${END}p" build.log || true
   else
-    echo "Could not detect first error line via grep. Showing last 80 lines instead:"
-    tail -80 build.log
+    echo "Could not detect first error line. Showing entire build.log:"
+    cat build.log
   fi
   echo ""
   echo "=== Searching for compilation errors ==="
