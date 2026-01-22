@@ -41,27 +41,39 @@ export interface Database {
       categories: {
         Row: {
           id: string
-          key: string
           name: string
+          slug: string
+          parent_id: string | null
           icon: string | null
+          description: string | null
           sort_order: number
+          is_active: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
-          key: string
           name: string
+          slug: string
+          parent_id?: string | null
           icon?: string | null
+          description?: string | null
           sort_order?: number
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
-          key?: string
           name?: string
+          slug?: string
+          parent_id?: string | null
           icon?: string | null
+          description?: string | null
           sort_order?: number
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
       }
       products: {
