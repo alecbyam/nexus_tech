@@ -1,0 +1,4 @@
+SUPABASE_URL=https://njgmuhrkbwdeijnbqync.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_oo2XgOSgK79l-Ywwr9DXxQ_8JEFTp_B
+WHATSAPP_PHONE=243818510311
+
