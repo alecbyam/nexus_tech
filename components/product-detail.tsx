@@ -55,9 +55,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-sm p-6">
-        <div className="aspect-square relative bg-gray-100 rounded-lg overflow-hidden">
+    <div className="max-w-6xl mx-auto animate-fade-in">
+      <div className="grid md:grid-cols-2 gap-10 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+        <div className="aspect-square relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg">
           {primaryImage && (
             <Image
               src={imageUrl}
@@ -67,46 +67,64 @@ export function ProductDetail({ product }: ProductDetailProps) {
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           )}
+          {product.is_refurbished && (
+            <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
+              Reconditionné
+            </div>
+          )}
         </div>
 
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {product.name}
-          </h1>
-          <p className="text-gray-500 mb-4">{product.categories?.name}</p>
-
-          {product.description && (
-            <p className="text-gray-700 mb-6">{product.description}</p>
-          )}
-
-          <div className="mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-4xl font-bold text-primary-500">
-                ${(product.price_cents / 100).toFixed(2)}
+        <div className="flex flex-col justify-between">
+          <div>
+            <div className="mb-4">
+              <span className="inline-block bg-primary-50 text-primary-600 px-3 py-1 rounded-full text-sm font-semibold mb-3">
+                {product.categories?.name}
               </span>
-              {product.is_refurbished && (
-                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm font-semibold">
-                  Reconditionné
-                </span>
-              )}
             </div>
-            <p className="text-sm text-gray-500">
-              Stock: {product.stock > 0 ? `${product.stock} disponibles` : 'Rupture de stock'}
-            </p>
+            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 leading-tight">
+              {product.name}
+            </h1>
+
+            {product.description && (
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">{product.description}</p>
+            )}
+
+            <div className="mb-8 p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-2xl border border-primary-100">
+              <div className="flex items-baseline gap-4 mb-3">
+                <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                  ${(product.price_cents / 100).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {product.stock > 0 ? (
+                  <>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    <p className="text-green-700 font-semibold">
+                      {product.stock} en stock
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-red-500 rounded-full" />
+                    <p className="text-red-600 font-semibold">Rupture de stock</p>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
             {product.stock > 0 && (
               <>
-                <div className="flex items-center gap-4">
-                  <label className="font-semibold">Quantité:</label>
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                  <label className="font-bold text-gray-900">Quantité:</label>
                   <input
                     type="number"
                     min="1"
                     max={product.stock}
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-24 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-semibold text-center"
                   />
                 </div>
 
@@ -114,22 +132,25 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   <button
                     onClick={handleAddToCart}
                     disabled={added}
-                    className="flex-1 bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors font-semibold disabled:bg-green-500"
+                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:from-green-500 disabled:to-green-600 disabled:transform-none"
                   >
                     {added ? '✓ Ajouté au panier' : 'Ajouter au panier'}
                   </button>
                   <button
                     onClick={handleWhatsApp}
-                    className="flex-1 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
                   >
-                    Commander via WhatsApp
+                    📱 WhatsApp
                   </button>
                 </div>
               </>
             )}
 
             {product.stock === 0 && (
-              <p className="text-red-500 font-semibold">Produit en rupture de stock</p>
+              <div className="p-6 bg-red-50 border-2 border-red-200 rounded-xl text-center">
+                <p className="text-red-600 font-bold text-lg">Produit en rupture de stock</p>
+                <p className="text-red-500 text-sm mt-2">Contactez-nous pour être notifié du retour en stock</p>
+              </div>
             )}
           </div>
         </div>

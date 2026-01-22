@@ -91,19 +91,19 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.productId}
-                className="bg-white rounded-lg shadow-sm p-6 flex gap-4"
+                className="bg-white rounded-2xl shadow-lg p-6 flex gap-6 border border-gray-100 hover:shadow-xl transition-all duration-300"
               >
                 {item.imageUrl && (
                   <img
                     src={item.imageUrl}
                     alt={item.name}
-                    className="w-24 h-24 object-cover rounded"
+                    className="w-32 h-32 object-cover rounded-xl shadow-md"
                   />
                 )}
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                  <p className="text-gray-500">${item.price.toFixed(2)}</p>
-                  <div className="flex items-center gap-4 mt-4">
+                  <h3 className="font-bold text-gray-900 text-lg mb-2">{item.name}</h3>
+                  <p className="text-primary-600 font-semibold text-lg mb-4">${item.price.toFixed(2)}</p>
+                  <div className="flex items-center gap-4">
                     <input
                       type="number"
                       min="1"
@@ -111,18 +111,18 @@ export default function CartPage() {
                       onChange={(e) =>
                         updateQuantity(item.productId, parseInt(e.target.value) || 1)
                       }
-                      className="w-20 px-2 py-1 border border-gray-300 rounded"
+                      className="w-24 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-semibold text-center"
                     />
                     <button
                       onClick={() => removeItem(item.productId)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 font-semibold hover:underline transition-all"
                     >
                       Supprimer
                     </button>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900">
+                  <p className="font-black text-2xl text-gray-900">
                     ${(item.price * item.quantity).toFixed(2)}
                   </p>
                 </div>
@@ -130,24 +130,26 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 h-fit">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Résumé</h2>
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Sous-total</span>
+          <div className="bg-gradient-to-br from-white to-primary-50 rounded-2xl shadow-xl p-6 h-fit border border-primary-100 sticky top-24">
+            <h2 className="text-2xl font-black text-gray-900 mb-6">Résumé</h2>
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-gray-600">
+                <span>Sous-total</span>
                 <span className="font-semibold">${total.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold text-gray-900 pt-4 border-t">
+              <div className="flex justify-between text-2xl font-black text-gray-900 pt-4 border-t-2 border-gray-200">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span className="bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                  ${total.toFixed(2)}
+                </span>
               </div>
             </div>
             <button
               onClick={handleCheckout}
               disabled={loading}
-              className="w-full bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors font-semibold disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
             >
-              {loading ? 'Traitement...' : 'Passer la commande'}
+              {loading ? '⏳ Traitement...' : '✅ Passer la commande'}
             </button>
           </div>
         </div>
