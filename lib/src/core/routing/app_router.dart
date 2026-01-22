@@ -20,9 +20,10 @@ import '../providers/supabase_providers.dart';
 import 'app_routes.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // IMPORTANT (web): ne pas "fabriquer" des AuthState à la main.
-  // On se branche directement sur le stream Supabase, ce qui évite des erreurs de compilation/runtime.
-  final authStream = ref.watch(authStateChangesProvider.stream);
+  // IMPORTANT (web): utiliser le stream Supabase directement via le client.
+  // authStateChangesProvider est un StreamProvider, donc on accède au stream via le client.
+  final client = ref.watch(supabaseClientProvider);
+  final authStream = client.auth.onAuthStateChange;
 
   return GoRouter(
     initialLocation: AppRoutes.home,
