@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { Category } from '@/lib/categories'
+import type { Category, CategoryWithChildren } from '@/lib/categories'
+import { buildCategoryTree } from '@/lib/categories'
 import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 
 interface CategoryTreeProps {
@@ -12,7 +13,7 @@ interface CategoryTreeProps {
 }
 
 interface CategoryNodeProps {
-  category: Category & { children?: Category[] }
+  category: CategoryWithChildren
   level: number
   selectedCategoryId?: string
   onCategorySelect?: (category: Category) => void
@@ -87,35 +88,8 @@ export function CategoryTree({
   selectedCategoryId,
   onCategorySelect,
 }: CategoryTreeProps) {
-  // Construire l'arbre hiérarchique
-  const tree = categories.reduce((acc, cat) => {
-    if (cat.parent_id === null) {
-      // Catégorie principale
-      const mainCat = { ...cat, children: [] as Category[] }
-      acc.push(mainCat)
-    } else {
-      // Trouver le parent et ajouter comme enfant
-      const parent = acc.find((c) => c.id === cat.parent_id)
-      if (parent) {
-        if (!parent.children) {
-          parent.children = []
-        }
-        parent.children.push(cat)
-      }
-    }
-    return acc
-  }, [] as Array<Category & { children?: Category[] }>)
-
-  // Trier par sort_order
-  const sortCategories = (cats: typeof tree) => {
-    cats.sort((a, b) => a.sort_order - b.sort_order)
-    cats.forEach((cat) => {
-      if (cat.children) {
-        cat.children.sort((a, b) => a.sort_order - b.sort_order)
-      }
-    })
-  }
-  sortCategories(tree)
+  // Construire l'arbre hiérarchique avec la fonction utilitaire
+  const tree = buildCategoryTree(categories)
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">

@@ -1,4 +1,5 @@
-import { createSupabaseServerClient } from '@/lib/supabase/client'
+import { createServerClient } from '@/lib/supabase/server'
+import { getCategoryBySlug } from '@/lib/services/categories'
 import { ProductGrid } from '@/components/product-grid'
 import { SearchBar } from '@/components/search-bar'
 import { Header } from '@/components/header'
@@ -11,7 +12,8 @@ type Product = Database['public']['Tables']['products']['Row'] & {
   }>
   categories: {
     name: string
-    key: string
+    slug: string
+    id: string
   }
 }
 
@@ -23,20 +25,29 @@ interface CatalogPageProps {
 }
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
-  const supabase = createSupabaseServerClient()
-  const { category, search } = searchParams
+  const supabase = await createServerClient()
+  const { category: categorySlug, search } = searchParams
+
+  // Si un slug de catégorie est fourni, récupérer la catégorie et ses sous-catégories
+  let categoryId: string | null = null
+  if (categorySlug) {
+    const category = await getCategoryBySlug(categorySlug)
+    if (category) {
+      categoryId = category.id
+    }
+  }
 
   let query = supabase
     .from('products')
     .select(`
       *,
       product_images(storage_path, is_primary),
-      categories(name, key)
+      categories(name, slug, id)
     `)
     .eq('is_active', true)
 
-  if (category) {
-    query = query.eq('categories.key', category)
+  if (categoryId) {
+    query = query.eq('category_id', categoryId)
   }
 
   if (search) {

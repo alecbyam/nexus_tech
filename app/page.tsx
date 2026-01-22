@@ -1,15 +1,10 @@
 import Link from 'next/link'
-import { createSupabaseServerClient } from '@/lib/supabase/client'
+import { getCategories } from '@/lib/services/categories'
 import { CategoryGrid } from '@/components/category-grid'
 import { Header } from '@/components/header'
 
 export default async function HomePage() {
-  const supabase = createSupabaseServerClient()
-  
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order')
+  const categories = await getCategories()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-white">
