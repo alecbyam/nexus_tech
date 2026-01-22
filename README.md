@@ -1,94 +1,125 @@
-# NEXUS TECH — E-commerce Flutter Web + Supabase
+# NEXUS TECH - Application Web Next.js
 
-Application e-commerce **100% web** **NEXUS TECH** (hébergée + accessible via nom de domaine, optimisée mobile-first) pour vendre :
-- coques de téléphone
-- accessoires téléphone
-- ordinateurs
-- accessoires ordinateur
-- services tech
+Application e-commerce **100% web** construite avec Next.js, TypeScript et Supabase.
 
-## 1) Prérequis
+## 🚀 Stack Technique
 
-- Flutter (stable) + Dart
-- Un projet Supabase (cloud ou self-host)
+- **Frontend**: Next.js 14 (App Router) + React + TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase (Auth, Database, Storage, Realtime)
+- **State Management**: Zustand
+- **Déploiement**: Vercel
 
-## 2) Configuration Supabase (SQL + Storage + RLS)
+## 📋 Prérequis
 
-1. Ouvre le **SQL Editor** Supabase et exécute :
-   - `supabase/schema.sql`
-   - `supabase/seed.sql`
+- Node.js 18+ 
+- npm ou yarn
+- Compte Supabase
 
-2. Vérifie que le bucket **`product-images`** existe (créé par le SQL) et que les policies sont OK.
+## 🛠️ Installation
 
-## 3) Variables d’environnement (Flutter)
-
-Crée un fichier `.env` à la racine (**ne jamais le committer**) :
-
+1. **Cloner le projet**
+```bash
+git clone <repo-url>
+cd nexus-tech
 ```
-SUPABASE_URL=https://njgmuhrkbwdeijnbqync.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_xxxxx
+
+2. **Installer les dépendances**
+```bash
+npm install
+```
+
+3. **Configurer les variables d'environnement**
+
+Créez un fichier `.env.local` à la racine :
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://njgmuhrkbwdeijnbqync.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_oo2XgOSgK79l-Ywwr9DXxQ_8JEFTp_B
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 WHATSAPP_PHONE=243818510311
 ```
 
-Notes :
-- `WHATSAPP_PHONE` au format international (sans `+`).
-- **Ne mets jamais `DATABASE_URL` / `DIRECT_URL` / mot de passe Postgres dans l’app Flutter** (c’est serveur uniquement).
+4. **Configurer Supabase**
 
-Variables attendues :
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `WHATSAPP_PHONE`
+Exécutez le script SQL dans votre projet Supabase :
+- `supabase/schema.sql` (tables, RLS, storage)
 
-## 4) Lancer l’app (web)
-
-Installer les dépendances :
-
+5. **Lancer en développement**
 ```bash
-flutter pub get
+npm run dev
 ```
 
-### Web
+L'application sera accessible sur [http://localhost:3000](http://localhost:3000)
 
-```bash
-flutter run -d chrome
-# Build production
-flutter build web --release
-# Le résultat est dans build/web
+## 🏗️ Structure du Projet
+
+```
+├── app/                    # App Router (Next.js 14)
+│   ├── auth/              # Pages d'authentification
+│   ├── catalog/           # Catalogue produits
+│   ├── products/          # Détail produit
+│   ├── cart/              # Panier
+│   ├── orders/            # Commandes
+│   ├── admin/             # Dashboard admin
+│   └── layout.tsx         # Layout principal
+├── components/            # Composants React réutilisables
+├── lib/                   # Utilitaires et clients
+│   └── supabase/          # Configuration Supabase
+├── store/                 # Zustand stores
+├── types/                 # Types TypeScript
+└── public/                # Assets statiques
 ```
 
-## 5) Optimisations mobile (Web)
+## 🎯 Fonctionnalités
 
-L'app est **100% web** mais **optimisée mobile-first** pour une excellente expérience sur smartphones :
-- **Touch targets** : minimum 56px (recommandation Material Design)
-- **Responsive breakpoints** : mobile (<600px), tablette (600-1024px), desktop (>1024px)
-- **Boutons grands** : facile à cliquer sur petits écrans
-- **Spacing adaptatif** : padding/marges ajustés selon la taille d'écran
-- **Low-bandwidth friendly** : images lazy-loaded, pas de ressources lourdes
-- **PWA-ready** : peut être ajoutée à l'écran d'accueil mobile (via manifest.json)
+- ✅ Authentification (Email + Google OAuth)
+- ✅ Catalogue produits avec recherche et filtres
+- ✅ Panier persistant (localStorage)
+- ✅ Système de commandes
+- ✅ Dashboard admin (gestion produits + commandes)
+- ✅ Design responsive mobile-first
+- ✅ SEO optimisé (SSR/SSG)
 
-## 6) Comptes & rôles admin
+## 🚢 Déploiement sur Vercel
 
-Dans cette base, un utilisateur est admin si `profiles.is_admin = true`.
-Après inscription d’un compte, mets `is_admin=true` via SQL (ou Table Editor) pour activer le dashboard admin.
+1. **Connecter le repo GitHub à Vercel**
 
-## 7) Structure (Clean Architecture + Riverpod)
+2. **Configurer les variables d'environnement dans Vercel** :
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (optionnel, pour admin)
+   - `WHATSAPP_PHONE`
 
-- `lib/core`: config, thème, routing, erreurs, widgets communs
-- `lib/features/auth`: auth (email + OTP téléphone)
-- `lib/features/catalog`: catégories, listing, recherche, détail produit
-- `lib/features/cart`: panier + création commande
-- `lib/features/orders`: historique commandes
-- `lib/features/admin`: CRUD produits + gestion commandes
+3. **Déployer** : Vercel détecte automatiquement Next.js et déploie
 
-## 8) Déploiement web (Vercel + nom de domaine)
+## 📝 Scripts Disponibles
 
-Tout est compatible **static hosting** (Netlify, Vercel, Cloudflare Pages, GitHub Pages via actions, etc.).
-Commande : `flutter build web --release` puis déployer le dossier `build/web`.
+- `npm run dev` - Développement local
+- `npm run build` - Build production
+- `npm run start` - Démarrer en production
+- `npm run lint` - Linter ESLint
+- `npm run type-check` - Vérification TypeScript
 
-### Déploiement Vercel (recommandé)
+## 🔒 Sécurité
 
-- **Build Command**: `bash ./vercel-build.sh` (installe Flutter puis build web)
-- **Output Directory**: `build/web`
-- **SPA routing**: déjà configuré via `vercel.json` (rewrites vers `index.html`).
+- Row Level Security (RLS) activé sur toutes les tables Supabase
+- Variables d'environnement pour les clés API
+- Authentification sécurisée via Supabase Auth
 
+## 📱 Responsive
 
+L'application est optimisée pour :
+- Mobile (< 640px)
+- Tablette (640px - 1024px)
+- Desktop (> 1024px)
+
+## 🎨 Design
+
+- Couleurs principales : Bleu (#0B5FFF) et Blanc
+- Typographie : Inter (Google Fonts)
+- Composants : Tailwind CSS
+
+## 📄 Licence
+
+Propriétaire - NEXUS TECH
