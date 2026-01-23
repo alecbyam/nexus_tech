@@ -18,7 +18,7 @@ const nextConfig = {
   // Optimisations de performance
   experimental: {
     optimizePackageImports: ['@heroicons/react'],
-    optimizeCss: true,
+    // optimizeCss: true, // Désactivé - nécessite critters
   },
   // Compiler optimizations
   compiler: {

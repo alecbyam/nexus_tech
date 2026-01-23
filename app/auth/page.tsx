@@ -7,6 +7,9 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/components/providers'
 
+// Force dynamic rendering (cannot be statically generated)
+export const dynamic = 'force-dynamic'
+
 export default function AuthPage() {
   const supabase = createSupabaseClient()
   const router = useRouter()
