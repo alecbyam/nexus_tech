@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { createSupabaseClient } from '@/lib/supabase/client'
@@ -10,7 +10,7 @@ import { useAuth } from '@/components/providers'
 // Force dynamic rendering (cannot be statically generated)
 export const dynamic = 'force-dynamic'
 
-export default function AuthPage() {
+function AuthContent() {
   const supabase = createSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
