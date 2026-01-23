@@ -66,7 +66,7 @@ export default function AdminInterestsPage() {
 
       if (activeTab === 'searches' || activeTab === 'users') {
         // Charger les recherches récentes (limité)
-        const { data: searches } = await supabase
+        const { data: searches } = await client
           .from('search_queries')
           .select(`
             *,
@@ -80,13 +80,13 @@ export default function AdminInterestsPage() {
 
       // Calculer les stats par utilisateur (seulement si nécessaire)
       if (activeTab === 'users') {
-        const { data: allViews } = await supabase
+        const { data: allViews } = await client
           .from('product_views')
           .select('user_id, profiles(full_name)')
           .not('user_id', 'is', null)
           .limit(1000)
 
-        const { data: allSearches } = await supabase
+        const { data: allSearches } = await client
           .from('search_queries')
           .select('user_id, profiles(full_name)')
           .not('user_id', 'is', null)
@@ -143,7 +143,7 @@ export default function AdminInterestsPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeTab, supabase])
+  }, [activeTab])
 
   useEffect(() => {
     if (authLoading) return
