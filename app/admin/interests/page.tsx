@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'
@@ -44,19 +44,7 @@ export default function AdminInterestsPage() {
   const [recentSearches, setRecentSearches] = useState<SearchQuery[]>([])
   const [activeTab, setActiveTab] = useState<'users' | 'views' | 'searches'>('users')
 
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
-    loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isAdmin, authLoading, router, activeTab])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -71,7 +59,7 @@ export default function AdminInterestsPage() {
             profiles(full_name)
           `)
           .order('viewed_at', { ascending: false })
-          .limit(30) // Réduit de 50 à 30
+          .limit(30)
 
         setRecentViews((views || []) as ProductView[])
       }
@@ -85,7 +73,7 @@ export default function AdminInterestsPage() {
             profiles(full_name)
           `)
           .order('created_at', { ascending: false })
-          .limit(30) // Réduit de 50 à 30
+          .limit(30)
 
         setRecentSearches((searches || []) as SearchQuery[])
       }
@@ -96,13 +84,13 @@ export default function AdminInterestsPage() {
           .from('product_views')
           .select('user_id, profiles(full_name)')
           .not('user_id', 'is', null)
-          .limit(1000) // Limite pour éviter les requêtes trop lourdes
+          .limit(1000)
 
         const { data: allSearches } = await supabase
           .from('search_queries')
           .select('user_id, profiles(full_name)')
           .not('user_id', 'is', null)
-          .limit(1000) // Limite pour éviter les requêtes trop lourdes
+          .limit(1000)
 
         const userStats = new Map<string, {
           userId: string
@@ -141,7 +129,7 @@ export default function AdminInterestsPage() {
         // Récupérer les emails (nécessite service_role ou fonction)
         const usersList: UserInterest[] = Array.from(userStats.values()).map((stats) => ({
           userId: stats.userId,
-          email: null, // Email nécessite service_role
+          email: null,
           fullName: stats.fullName,
           totalViews: stats.views,
           totalSearches: stats.searches,
@@ -155,7 +143,18 @@ export default function AdminInterestsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeTab, supabase])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user || !isAdmin) {
+      router.push('/')
+      return
+    }
+
+    loadData()
+  }, [user, isAdmin, authLoading, router, loadData])
 
   if (authLoading || loading) {
     return (
