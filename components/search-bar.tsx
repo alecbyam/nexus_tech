@@ -1,8 +1,12 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { useDebounce } from '@/lib/hooks/use-debounce'
+import { createSupabaseClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers'
+import { useSessionId } from '@/lib/hooks/use-session-id'
 
 interface SearchBarProps {
   initialSearch?: string
@@ -12,7 +16,56 @@ interface SearchBarProps {
 export function SearchBar({ initialSearch, initialCategory }: SearchBarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useAuth()
+  const sessionId = useSessionId()
+  const supabase = createSupabaseClient()
   const [search, setSearch] = useState(initialSearch || '')
+  const debouncedSearch = useDebounce(search, 500) // Debounce de 500ms
+
+  // Mettre à jour l'URL automatiquement après le debounce
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    
+    if (debouncedSearch.trim()) {
+      params.set('search', debouncedSearch.trim())
+    } else {
+      params.delete('search')
+    }
+
+    // Ne pas naviguer si c'est le chargement initial
+    if (debouncedSearch !== initialSearch) {
+      router.push(`/catalog?${params.toString()}`, { scroll: false })
+    }
+  }, [debouncedSearch, router, searchParams, initialSearch])
+
+  // Track search queries
+  useEffect(() => {
+    const trackSearch = async () => {
+      if (!debouncedSearch.trim() || debouncedSearch === initialSearch) return
+
+      try {
+        // Compter les résultats (approximatif)
+        const { count } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .ilike('name', `%${debouncedSearch.trim()}%`)
+
+        await supabase.from('search_queries').insert({
+          query: debouncedSearch.trim(),
+          category_slug: initialCategory || null,
+          results_count: count || 0,
+          user_id: user?.id || null,
+          session_id: sessionId || null,
+        })
+      } catch (error) {
+        // Silently fail - tracking is not critical
+        console.error('Error tracking search:', error)
+      }
+    }
+
+    trackSearch()
+  }, [debouncedSearch, initialCategory, user?.id, sessionId, supabase, initialSearch])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,4 +99,3 @@ export function SearchBar({ initialSearch, initialCategory }: SearchBarProps) {
     </form>
   )
 }
-

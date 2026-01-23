@@ -54,9 +54,21 @@ create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   key text not null unique, -- Phones / Computers / Accessories / Services
   name text not null,
+  slug text unique, -- URL-friendly identifier
+  parent_id uuid references public.categories(id) on delete cascade,
   sort_order int not null default 0,
-  created_at timestamptz not null default now()
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+drop trigger if exists categories_set_updated_at on public.categories;
+create trigger categories_set_updated_at
+before update on public.categories
+for each row execute function public.set_updated_at();
+
+create index if not exists idx_categories_parent on public.categories(parent_id);
+create index if not exists idx_categories_slug on public.categories(slug);
 
 -- 3) Produits
 create table if not exists public.products (
@@ -66,6 +78,7 @@ create table if not exists public.products (
   name text not null,
   description text,
   price_cents int not null check (price_cents >= 0),
+  compare_at_price_cents int check (compare_at_price_cents >= 0), -- Prix d'ancrage (comparaison)
   currency text not null default 'USD',
   stock int not null default 0 check (stock >= 0),
   is_refurbished boolean not null default false,

@@ -2,18 +2,21 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   isAdmin: boolean
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAdmin: false,
+  signOut: async () => {},
 })
 
 export function useAuth() {
@@ -25,10 +28,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createSupabaseClient()
+  const router = useRouter()
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!mounted) return
+      
+      if (error) {
+        console.error('Error getting session:', error)
+        setLoading(false)
+        return
+      }
+
       setUser(session?.user ?? null)
       if (session?.user) {
         checkAdminStatus(session.user.id)
@@ -41,33 +55,62 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+
       setUser(session?.user ?? null)
       if (session?.user) {
         await checkAdminStatus(session.user.id)
       } else {
         setIsAdmin(false)
+        setLoading(false)
       }
-      setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function checkAdminStatus(userId: string) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', userId)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single()
 
-    setIsAdmin(data?.is_admin ?? false)
-    setLoading(false)
+      if (error) {
+        console.error('Error checking admin status:', error)
+        setIsAdmin(false)
+      } else {
+        setIsAdmin(data?.is_admin ?? false)
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error)
+      setIsAdmin(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function signOut() {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      setUser(null)
+      setIsAdmin(false)
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      console.error('Error signing out:', error)
+      throw error
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signOut }}>
       {children}
     </AuthContext.Provider>
   )
 }
-

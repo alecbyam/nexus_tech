@@ -9,21 +9,33 @@ import { buildCategoryTree, getMainCategories, filterActiveCategories } from '@/
 /**
  * Récupère toutes les catégories actives depuis Supabase (server-side)
  */
-export async function getCategories(): Promise<Category[]> {
-  const supabase = await createServerClient()
-  
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+export async function getCategories(includeInactive = false): Promise<Category[]> {
+  try {
+    const supabase = await createServerClient()
+    
+    let queryBuilder = supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching categories:', error)
-    throw error
+    if (!includeInactive) {
+      queryBuilder = queryBuilder.eq('is_active', true)
+    }
+
+    const { data, error } = await queryBuilder
+
+    if (error) {
+      console.error('Error fetching categories:', error)
+      // Retourner un tableau vide au lieu de throw pour éviter de casser la page
+      return []
+    }
+
+    return (data || []) as Category[]
+  } catch (error) {
+    console.error('Error in getCategories:', error)
+    // Retourner un tableau vide en cas d'erreur
+    return []
   }
-
-  return (data || []) as Category[]
 }
 
 /**
@@ -62,7 +74,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
       return null
     }
     console.error('Error fetching category by slug:', error)
-    throw error
+    throw new Error(`Failed to fetch category by slug: ${error.message}`)
   }
 
   return data as Category
@@ -83,7 +95,7 @@ export async function getSubcategoriesByParentId(parentId: string): Promise<Cate
 
   if (error) {
     console.error('Error fetching subcategories:', error)
-    throw error
+    throw new Error(`Failed to fetch subcategories: ${error.message}`)
   }
 
   return (data || []) as Category[]

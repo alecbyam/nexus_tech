@@ -4,26 +4,29 @@ import { useEffect, useState } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/components/providers'
 
 export default function AuthPage() {
   const supabase = createSupabaseClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user) {
-      router.push('/')
+      // Rediriger vers la page demandée ou la page d'accueil
+      const redirect = searchParams.get('redirect') || '/'
+      router.push(redirect)
     } else {
       setLoading(false)
     }
-  }, [user, router])
+  }, [user, router, searchParams])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-blue-50 to-white">
         <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -46,7 +49,6 @@ export default function AuthPage() {
                   brand: '#0B5FFF',
                   brandAccent: '#2563eb',
                 },
-                borderRadius: '0.75rem',
                 fontSizes: {
                   baseBodySize: '16px',
                 },
@@ -64,9 +66,32 @@ export default function AuthPage() {
               },
             },
           }}
-          providers={['google']}
-          redirectTo={`${window.location.origin}/auth/callback`}
+          providers={['google', 'github']}
+          redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
+          view="sign_in"
+          showLinks={true}
+          onlyThirdPartyProviders={false}
         />
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600 mb-2">
+            Pas encore de compte ?{' '}
+            <a href="/auth/signup" className="text-primary-600 hover:text-primary-700 font-semibold hover:underline">
+              Créer un compte
+            </a>
+          </p>
+        </div>
+        <div className="mt-4 text-center text-sm text-gray-500">
+          <p>
+            En vous connectant, vous acceptez nos{' '}
+            <a href="/terms" className="text-primary-600 hover:underline font-semibold">
+              conditions d'utilisation
+            </a>{' '}
+            et notre{' '}
+            <a href="/privacy" className="text-primary-600 hover:underline font-semibold">
+              politique de confidentialité
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

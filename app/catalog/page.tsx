@@ -67,10 +67,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           <p className="text-gray-600 mb-6 text-lg">
             Découvrez notre sélection de produits tech
           </p>
-          <SearchBar initialSearch={search} initialCategory={category} />
-        </div>
-
-        <ProductGrid products={(products as Product[]) || []} />
+          <SearchBar initialSearch={search} initialCategory={categorySlug} />
+        </div>        <ProductGrid products={(products as Product[]) || []} />
       </main>
     </div>
   )

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/client'
+import { createServerClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ProductDetail } from '@/components/product-detail'
 import { Header } from '@/components/header'
@@ -8,12 +8,19 @@ export default async function ProductPage({
 }: {
   params: { id: string }
 }) {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createServerClient()
 
   const { data: product } = await supabase
     .from('products')
     .select(`
-      *,
+      id,
+      name,
+      description,
+      price_cents,
+      compare_at_price_cents,
+      stock,
+      is_refurbished,
+      condition,
       product_images(storage_path, is_primary),
       categories(name, key)
     `)
