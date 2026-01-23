@@ -37,7 +37,6 @@ interface UserInterest {
 export default function AdminInterestsPage() {
   const { user, isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
-  const supabase = createSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [usersInterests, setUsersInterests] = useState<UserInterest[]>([])
   const [recentViews, setRecentViews] = useState<ProductView[]>([])
