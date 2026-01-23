@@ -45,13 +45,14 @@ export default function AdminInterestsPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'views' | 'searches'>('users')
 
   const loadData = useCallback(async () => {
+    const client = createSupabaseClient()
     try {
       setLoading(true)
       
       // Charger seulement les données nécessaires selon l'onglet actif
       if (activeTab === 'views' || activeTab === 'users') {
         // Charger les vues récentes (limité)
-        const { data: views } = await supabase
+        const { data: views } = await client
           .from('product_views')
           .select(`
             *,
