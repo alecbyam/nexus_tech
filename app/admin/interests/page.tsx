@@ -53,7 +53,8 @@ export default function AdminInterestsPage() {
     }
 
     loadData()
-  }, [user, isAdmin, authLoading, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isAdmin, authLoading, router, activeTab])
 
   async function loadData() {
     try {
@@ -103,51 +104,52 @@ export default function AdminInterestsPage() {
           .not('user_id', 'is', null)
           .limit(1000) // Limite pour éviter les requêtes trop lourdes
 
-      const userStats = new Map<string, {
-        userId: string
-        fullName: string | null
-        views: number
-        searches: number
-        lastActivity: string | null
-      }>()
+        const userStats = new Map<string, {
+          userId: string
+          fullName: string | null
+          views: number
+          searches: number
+          lastActivity: string | null
+        }>()
 
-      allViews?.forEach((view: any) => {
-        if (!view.user_id) return
-        const stats = userStats.get(view.user_id) || {
-          userId: view.user_id,
-          fullName: view.profiles?.full_name || null,
-          views: 0,
-          searches: 0,
-          lastActivity: null,
-        }
-        stats.views++
-        userStats.set(view.user_id, stats)
-      })
+        allViews?.forEach((view: any) => {
+          if (!view.user_id) return
+          const stats = userStats.get(view.user_id) || {
+            userId: view.user_id,
+            fullName: view.profiles?.full_name || null,
+            views: 0,
+            searches: 0,
+            lastActivity: null,
+          }
+          stats.views++
+          userStats.set(view.user_id, stats)
+        })
 
-      allSearches?.forEach((search: any) => {
-        if (!search.user_id) return
-        const stats = userStats.get(search.user_id) || {
-          userId: search.user_id,
-          fullName: search.profiles?.full_name || null,
-          views: 0,
-          searches: 0,
-          lastActivity: null,
-        }
-        stats.searches++
-        userStats.set(search.user_id, stats)
-      })
+        allSearches?.forEach((search: any) => {
+          if (!search.user_id) return
+          const stats = userStats.get(search.user_id) || {
+            userId: search.user_id,
+            fullName: search.profiles?.full_name || null,
+            views: 0,
+            searches: 0,
+            lastActivity: null,
+          }
+          stats.searches++
+          userStats.set(search.user_id, stats)
+        })
 
-      // Récupérer les emails (nécessite service_role ou fonction)
-      const usersList: UserInterest[] = Array.from(userStats.values()).map((stats) => ({
-        userId: stats.userId,
-        email: null, // Email nécessite service_role
-        fullName: stats.fullName,
-        totalViews: stats.views,
-        totalSearches: stats.searches,
-        lastActivity: stats.lastActivity,
-      }))
+        // Récupérer les emails (nécessite service_role ou fonction)
+        const usersList: UserInterest[] = Array.from(userStats.values()).map((stats) => ({
+          userId: stats.userId,
+          email: null, // Email nécessite service_role
+          fullName: stats.fullName,
+          totalViews: stats.views,
+          totalSearches: stats.searches,
+          lastActivity: stats.lastActivity,
+        }))
 
-      setUsersInterests(usersList)
+        setUsersInterests(usersList)
+      }
     } catch (error: any) {
       console.error('Error loading interests:', error)
     } finally {
