@@ -32,11 +32,14 @@ export default function CategoriesPage() {
 
   async function loadCategories() {
     try {
+      setLoading(true)
+      // Limiter à 200 catégories pour améliorer les performances
       const { data, error } = await supabase
         .from('categories')
         .select('*, parent:categories!categories_parent_id_fkey(*)')
         .order('sort_order', { ascending: true })
         .order('name', { ascending: true })
+        .limit(200) // Limite pour éviter les requêtes trop lourdes
 
       if (error) throw error
       setCategories(data || [])

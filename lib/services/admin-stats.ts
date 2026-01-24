@@ -20,42 +20,36 @@ export interface AdminStats {
 export async function getAdminStats(): Promise<AdminStats> {
   const supabase = await createSupabaseServerClient()
 
-  // Produits
-  const { count: totalProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
+  // Paralléliser toutes les requêtes de comptage (beaucoup plus rapide)
+  const [
+    totalProductsResult,
+    activeProductsResult,
+    lowStockResult,
+    outOfStockResult,
+    totalOrdersResult,
+    pendingOrdersResult,
+    totalUsersResult,
+    recentOrdersResult,
+  ] = await Promise.all([
+    supabase.from('products').select('*', { count: 'exact', head: true }),
+    supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock', 0).lte('stock', 10),
+    supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0),
+    supabase.from('orders').select('*', { count: 'exact', head: true }),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+  ])
 
-  const { count: activeProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true)
-
-  const { count: lowStockProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .gt('stock', 0)
-    .lte('stock', 10)
-
-  const { count: outOfStockProducts } = await supabase
-    .from('products')
-    .select('*', { count: 'exact', head: true })
-    .eq('stock', 0)
-
-  // Commandes
-  const { count: totalOrders } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-
-  const { count: pendingOrders } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'pending')
-
-  // Revenus
+  // Revenus (limité pour performance)
   const { data: ordersData } = await supabase
     .from('orders')
     .select('total_cents, status')
     .neq('status', 'cancelled')
+    .limit(5000) // Limite pour éviter les requêtes trop lourdes
 
   const totalRevenue =
     ordersData?.reduce((sum, order) => sum + order.total_cents, 0) || 0
@@ -65,28 +59,16 @@ export async function getAdminStats(): Promise<AdminStats> {
       ? totalRevenue / ordersData.length / 100
       : 0
 
-  // Utilisateurs
-  const { count: totalUsers } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-
-  // Commandes récentes (7 derniers jours)
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const { count: recentOrders } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', sevenDaysAgo)
-
   return {
-    totalProducts: totalProducts || 0,
-    activeProducts: activeProducts || 0,
-    totalOrders: totalOrders || 0,
-    pendingOrders: pendingOrders || 0,
+    totalProducts: totalProductsResult.count || 0,
+    activeProducts: activeProductsResult.count || 0,
+    totalOrders: totalOrdersResult.count || 0,
+    pendingOrders: pendingOrdersResult.count || 0,
     totalRevenue: totalRevenue / 100,
-    totalUsers: totalUsers || 0,
-    lowStockProducts: lowStockProducts || 0,
-    outOfStockProducts: outOfStockProducts || 0,
-    recentOrders: recentOrders || 0,
+    totalUsers: totalUsersResult.count || 0,
+    lowStockProducts: lowStockResult.count || 0,
+    outOfStockProducts: outOfStockResult.count || 0,
+    recentOrders: recentOrdersResult.count || 0,
     averageOrderValue: Math.round(averageOrderValue * 100) / 100,
   }
 }
@@ -97,9 +79,11 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function getTopSellingProducts(limit: number = 10) {
   const supabase = await createSupabaseServerClient()
 
+  // Limiter les order_items pour améliorer les performances
   const { data: orderItems } = await supabase
     .from('order_items')
     .select('product_id, quantity, name_snapshot')
+    .limit(10000) // Limite pour éviter les requêtes trop lourdes
 
   const productSales = new Map<string, { name: string; quantity: number }>()
 
@@ -133,12 +117,14 @@ export async function getSalesByPeriod(days: number = 30) {
 
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
+  // Limiter les résultats pour améliorer les performances
   const { data: orders } = await supabase
     .from('orders')
     .select('total_cents, created_at, status')
     .gte('created_at', startDate)
     .neq('status', 'cancelled')
     .order('created_at', { ascending: true })
+    .limit(5000) // Limite pour éviter les requêtes trop lourdes
 
   // Grouper par jour
   const salesByDay = new Map<string, number>()

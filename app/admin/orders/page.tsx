@@ -69,15 +69,11 @@ export default function AdminOrdersPage() {
     try {
       setLoading(true)
       
-      // Charger les statistiques séparément (plus rapide)
-      const { count: totalCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-
-      const { data: statusData } = await supabase
-        .from('orders')
-        .select('status, total_cents')
-        .limit(10000) // Pour les stats
+      // Charger les statistiques séparément en parallèle (plus rapide)
+      const [totalResult, statusResult] = await Promise.all([
+        supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('status, total_cents').limit(5000), // Réduit pour performance
+      ])
 
       // Calculer les statistiques rapidement
       const orderStats: OrderStats = {
