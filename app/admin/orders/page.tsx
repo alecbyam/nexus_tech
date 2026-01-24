@@ -75,17 +75,19 @@ export default function AdminOrdersPage() {
         supabase.from('orders').select('status, total_cents').limit(5000), // Réduit pour performance
       ])
 
+      const statusData = statusResult.data || []
+
       // Calculer les statistiques rapidement
       const orderStats: OrderStats = {
-        total: totalCount || 0,
-        pending: statusData?.filter((o) => o.status === 'pending').length || 0,
-        confirmed: statusData?.filter((o) => o.status === 'confirmed').length || 0,
-        shipped: statusData?.filter((o) => o.status === 'shipped').length || 0,
-        delivered: statusData?.filter((o) => o.status === 'delivered').length || 0,
-        cancelled: statusData?.filter((o) => o.status === 'cancelled').length || 0,
+        total: totalResult.count || 0,
+        pending: statusData.filter((o) => o.status === 'pending').length || 0,
+        confirmed: statusData.filter((o) => o.status === 'confirmed').length || 0,
+        shipped: statusData.filter((o) => o.status === 'shipped').length || 0,
+        delivered: statusData.filter((o) => o.status === 'delivered').length || 0,
+        cancelled: statusData.filter((o) => o.status === 'cancelled').length || 0,
         totalRevenue:
           (statusData
-            ?.filter((o) => o.status !== 'cancelled')
+            .filter((o) => o.status !== 'cancelled')
             .reduce((sum, o) => sum + o.total_cents, 0) || 0) / 100,
       }
       setStats(orderStats)
