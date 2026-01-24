@@ -4,8 +4,19 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
-import { getAdminStats, getTopSellingProducts, getSalesByPeriod } from '@/lib/services/admin-stats'
-import type { AdminStats } from '@/lib/services/admin-stats'
+
+export interface AdminStats {
+  totalProducts: number
+  activeProducts: number
+  totalOrders: number
+  pendingOrders: number
+  totalRevenue: number
+  totalUsers: number
+  lowStockProducts: number
+  outOfStockProducts: number
+  recentOrders: number
+  averageOrderValue: number
+}
 
 export default function AdminStatsPage() {
   const { user, isAdmin, loading: authLoading } = useAuth()

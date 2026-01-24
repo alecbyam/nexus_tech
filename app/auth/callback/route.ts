@@ -4,62 +4,76 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  try {
+    const requestUrl = new URL(request.url)
+    const code = requestUrl.searchParams.get('code')
+    const next = requestUrl.searchParams.get('next') || '/'
 
-  if (code) {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Ignore errors in Server Components
-            }
-          },
-        },
-      }
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (error) {
-      console.error('Error exchanging code for session:', error)
-      return NextResponse.redirect(new URL('/auth?error=auth_failed', requestUrl.origin))
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables')
+      return NextResponse.redirect(new URL('/auth?error=config_error', requestUrl.origin))
     }
 
-    // Vérifier et créer le profil si nécessaire
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    if (code) {
+      const cookieStore = await cookies()
+      const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options)
+                )
+              } catch {
+                // Ignore errors in Server Components
+              }
+            },
+          },
+        }
+      )
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-      if (!profile) {
-        // Créer le profil si il n'existe pas
-        await supabase.from('profiles').insert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-          phone: user.phone || null,
-        })
+      if (error) {
+        console.error('Error exchanging code for session:', error)
+        return NextResponse.redirect(new URL('/auth?error=auth_failed', requestUrl.origin))
+      }
+
+      // Vérifier et créer le profil si nécessaire
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile) {
+          // Créer le profil si il n'existe pas
+          await supabase.from('profiles').insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+            phone: user.phone || null,
+          })
+        }
       }
     }
+
+    return NextResponse.redirect(new URL(next, requestUrl.origin))
+  } catch (error) {
+    console.error('Auth callback error:', error)
+    const requestUrl = new URL(request.url)
+    return NextResponse.redirect(new URL('/auth?error=auth_failed', requestUrl.origin))
   }
-
-  return NextResponse.redirect(new URL(next, requestUrl.origin))
 }

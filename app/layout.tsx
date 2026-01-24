@@ -15,13 +15,18 @@ export const metadata: Metadata = {
   title: 'NEXUS TECH - Boutique Tech en ligne',
   description: 'Boutique tech: smartphones, ordinateurs, accessoires, services',
   keywords: 'smartphones, ordinateurs, accessoires, tech, e-commerce',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   robots: 'index, follow',
   openGraph: {
     title: 'NEXUS TECH - Boutique Tech en ligne',
     description: 'Boutique tech: smartphones, ordinateurs, accessoires, services',
     type: 'website',
   },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
