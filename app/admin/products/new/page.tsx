@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'
@@ -18,9 +18,9 @@ export default function NewProductPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -43,15 +43,16 @@ export default function NewProductPage() {
     }
 
     loadCategories()
-  }, [user, isAdmin, authLoading, router])
+  }, [user, isAdmin, authLoading, router, loadCategories])
 
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
+        .limit(100) // Limite pour performance
 
       if (error) throw error
       setCategories(data || [])
@@ -61,7 +62,7 @@ export default function NewProductPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -76,30 +77,54 @@ export default function NewProductPage() {
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      setError('Veuillez sélectionner une image')
-      return
+    const validFiles: File[] = []
+    const newPreviews: string[] = []
+    let loadedCount = 0
+
+    // Valider chaque fichier
+    for (const file of files) {
+      // Vérifier le type de fichier
+      if (!file.type.startsWith('image/')) {
+        setError(`Le fichier ${file.name} n'est pas une image valide`)
+        continue
+      }
+
+      // Vérifier la taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`L'image ${file.name} dépasse 5MB`)
+        continue
+      }
+
+      validFiles.push(file)
+
+      // Créer un aperçu de manière asynchrone
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string)
+        loadedCount++
+        // Mettre à jour les previews une fois toutes les images chargées
+        if (loadedCount === validFiles.length) {
+          setImagePreviews((prev) => [...prev, ...newPreviews])
+        }
+      }
+      reader.readAsDataURL(file)
     }
 
-    // Vérifier la taille (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('L\'image ne doit pas dépasser 5MB')
-      return
+    if (validFiles.length > 0) {
+      setSelectedImages((prev) => [...prev, ...validFiles])
+      setError(null)
     }
+    
+    // Réinitialiser l'input pour permettre de sélectionner les mêmes fichiers
+    e.target.value = ''
+  }
 
-    setSelectedImage(file)
-    setError(null)
-
-    // Créer un aperçu
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string)
-    }
-    reader.readAsDataURL(file)
+  function removeImage(index: number) {
+    setSelectedImages(selectedImages.filter((_, i) => i !== index))
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -186,18 +211,23 @@ export default function NewProductPage() {
         }
       }
 
-      // Upload de l'image si sélectionnée
-      if (selectedImage && product) {
-        setUploadingImage(true)
+      // Upload des images si sélectionnées (au moins 3 recommandées)
+      if (selectedImages.length > 0 && product) {
+        setUploadingImages(true)
         try {
-          const { storagePath } = await uploadProductImage(product.id, selectedImage)
-          await attachProductImage(product.id, storagePath, true)
+          const uploadPromises = selectedImages.map(async (image, index) => {
+            const { storagePath } = await uploadProductImage(product.id, image)
+            // La première image est marquée comme primaire
+            await attachProductImage(product.id, storagePath, index === 0)
+          })
+          
+          await Promise.all(uploadPromises)
         } catch (imageError: any) {
-          console.error('Error uploading image:', imageError)
+          console.error('Error uploading images:', imageError)
           // On continue même si l'upload d'image échoue
-          setError('Produit créé mais erreur lors de l\'upload de l\'image')
+          setError('Produit créé mais erreur lors de l\'upload de certaines images')
         } finally {
-          setUploadingImage(false)
+          setUploadingImages(false)
         }
       }
 
@@ -365,41 +395,72 @@ export default function NewProductPage() {
                 />
               </div>
 
-              {/* Image du produit */}
+              {/* Images du produit */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Image du produit
+                  Images du produit <span className="text-primary-600">(Minimum 3 recommandées)</span>
                 </label>
                 <div className="space-y-4">
-                  {imagePreview && (
-                    <div className="relative w-full max-w-xs">
-                      <img
-                        src={imagePreview}
-                        alt="Aperçu"
-                        className="w-full h-48 object-cover rounded-xl border-2 border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedImage(null)
-                          setImagePreview(null)
-                        }}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
-                      >
-                        ✕
-                      </button>
+                  {/* Aperçus des images sélectionnées */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Aperçu ${index + 1}`}
+                            className="w-full h-48 object-cover rounded-xl border-2 border-gray-200"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                            {index === 0 ? '⭐ Principale' : `Image ${index + 1}`}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                            aria-label="Supprimer l'image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <input
-                    type="file"
-                    id="image"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Formats acceptés: JPG, PNG, WEBP. Taille max: 5MB
-                  </p>
+                  
+                  {/* Input pour ajouter des images */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-400 transition-colors">
+                    <input
+                      type="file"
+                      id="images"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="images"
+                      className="cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <div className="text-4xl">📷</div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {selectedImages.length === 0
+                          ? 'Cliquez pour ajouter des images'
+                          : `Ajouter plus d'images (${selectedImages.length} sélectionnée${selectedImages.length > 1 ? 's' : ''})`}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Formats: JPG, PNG, WEBP • Max 5MB par image
+                      </span>
+                    </label>
+                  </div>
+                  
+                  {selectedImages.length > 0 && selectedImages.length < 3 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm text-yellow-800">
+                        💡 <strong>Recommandation:</strong> Ajoutez au moins 3 images pour une meilleure présentation du produit.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -456,12 +517,12 @@ export default function NewProductPage() {
             <div className="mt-8 flex gap-4">
               <button
                 type="submit"
-                disabled={saving || uploadingImage}
+                disabled={saving || uploadingImages}
                 className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
               >
-                {saving || uploadingImage
-                  ? uploadingImage
-                    ? '📤 Upload de l\'image...'
+                {saving || uploadingImages
+                  ? uploadingImages
+                    ? `📤 Upload de ${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''}...`
                     : '⏳ Création...'
                   : '✅ Créer le produit'}
               </button>
