@@ -96,6 +96,13 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
+          {order.delivery_address && (
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl mb-4">
+              <p className="text-sm text-blue-800 font-semibold mb-2">📍 Adresse de livraison</p>
+              <p className="text-gray-900 font-medium">{order.delivery_address}</p>
+            </div>
+          )}
+
           {order.customer_note && (
             <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
               <p className="text-sm text-yellow-800 font-semibold mb-2">📝 Note client</p>
