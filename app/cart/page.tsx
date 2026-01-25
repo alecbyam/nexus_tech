@@ -169,7 +169,7 @@ export default function CartPage() {
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900 mb-1">{item.name}</h3>
                   <p className="text-primary-600 font-black text-lg">
-                    ${item.price.toFixed(2)}
+                    {formatPrice(Math.round(item.price * 100), 'CDF')}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
