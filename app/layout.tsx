@@ -12,12 +12,12 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'NEXUS TECH - Boutique Tech RDC',
+  title: 'ONATECH - Boutique Tech RDC',
   description: 'Boutique tech en République Démocratique du Congo: smartphones, ordinateurs, accessoires, services',
   keywords: 'smartphones, ordinateurs, accessoires, tech, e-commerce',
   robots: 'index, follow',
   openGraph: {
-    title: 'NEXUS TECH - Boutique Tech en ligne',
+    title: 'ONATECH - Boutique Tech en ligne',
     description: 'Boutique tech: smartphones, ordinateurs, accessoires, services',
     type: 'website',
   },

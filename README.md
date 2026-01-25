@@ -1,4 +1,4 @@
-# NEXUS TECH - Application Web Next.js
+# ONATECH - Application Web Next.js
 
 Application e-commerce **100% web** construite avec Next.js, TypeScript et Supabase.
 
@@ -122,4 +122,4 @@ L'application est optimisée pour :
 
 ## 📄 Licence
 
-Propriétaire - NEXUS TECH
+Propriétaire - ONATECH

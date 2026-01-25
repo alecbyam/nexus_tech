@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuth } from './providers'
 import { ShoppingCartIcon, UserIcon, Bars3Icon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cart-store'
@@ -27,8 +28,32 @@ export const Header = memo(function Header() {
     <header className="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-100">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          <Link href="/" className="text-3xl font-black gradient-text">
-            NEXUS TECH
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <Image
+                src="/logo-onatech.png"
+                alt="ONATECH Logo"
+                width={48}
+                height={48}
+                className="object-contain"
+                priority
+                onError={(e) => {
+                  // Fallback si l'image n'existe pas encore
+                  const target = e.currentTarget as HTMLImageElement
+                  target.style.display = 'none'
+                  const parent = target.parentElement
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const fallback = document.createElement('div')
+                    fallback.className = 'logo-fallback w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center'
+                    fallback.innerHTML = '<svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>'
+                    parent.appendChild(fallback)
+                  }
+                }}
+              />
+            </div>
+            <span className="text-3xl font-black gradient-text group-hover:scale-105 transition-transform">
+              ONATECH
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -72,7 +97,7 @@ export const Header = memo(function Header() {
             )}
 
             <a
-              href="https://wa.me/243818510311?text=Bonjour%20NEXUS%20TECH,%20j%27aimerais%20vous%20contacter"
+              href="https://wa.me/243818510311?text=Bonjour%20ONATECH,%20j%27aimerais%20vous%20contacter"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-green-600 hover:text-green-700 transition-all duration-200 hover:bg-green-50 rounded-lg"

@@ -109,7 +109,7 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
   const handleWhatsApp = () => {
     const priceFormatted = formatPrice(product.price_cents, product.currency || 'USD')
     const message = encodeURIComponent(
-      `Bonjour NEXUS TECH, je veux commander: ${product.name} (prix: ${priceFormatted}).`
+      `Bonjour ONATECH, je veux commander: ${product.name} (prix: ${priceFormatted}).`
     )
     const phone = '243818510311'
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank')

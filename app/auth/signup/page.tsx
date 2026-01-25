@@ -139,7 +139,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-10 border border-gray-100 animate-fade-in">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black gradient-text mb-2">Créer un compte</h1>
-            <p className="text-gray-600">Rejoignez NEXUS TECH dès aujourd'hui</p>
+            <p className="text-gray-600">Rejoignez ONATECH dès aujourd'hui</p>
           </div>
 
           {error && (
