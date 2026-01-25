@@ -2,10 +2,18 @@ import Link from 'next/link'
 import { getCategories } from '@/lib/services/categories'
 import { CategoryGrid } from '@/components/category-grid'
 import { Header } from '@/components/header'
+import { Suspense } from 'react'
+import { LoadingSpinner } from '@/components/loading-spinner'
+
+// Cache les catégories pendant 60 secondes
+export const revalidate = 60
+
+async function CategoriesSection() {
+  const categories = await getCategories()
+  return <CategoryGrid categories={categories || []} />
+}
 
 export default async function HomePage() {
-  const categories = await getCategories()
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-white">
       <Header />
@@ -35,9 +43,9 @@ export default async function HomePage() {
           <p className="text-gray-600 text-center mb-8">
             Explorez notre sélection de produits tech
           </p>
-        </div>
-
-        <CategoryGrid categories={categories || []} />
+        </div>        <Suspense fallback={<LoadingSpinner size="lg" text="Chargement des catégories..." />}>
+          <CategoriesSection />
+        </Suspense>
       </main>
     </div>
   )

@@ -83,7 +83,7 @@ export default function CartPage() {
           user_id: user.id,
           status: 'pending' as const,
           total_cents: Math.round(finalTotal * 100),
-          currency: 'CDF',
+          currency: 'USD',
         })
         .select()
         .single()
@@ -169,7 +169,7 @@ export default function CartPage() {
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900 mb-1">{item.name}</h3>
                   <p className="text-primary-600 font-black text-lg">
-                    {formatPrice(Math.round(item.price * 100), 'CDF')}
+                    {formatPrice(Math.round(item.price * 100), 'USD')}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -237,17 +237,17 @@ export default function CartPage() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
                 <span>Sous-total</span>
-                <span className="font-semibold">{formatPrice(Math.round(subtotal * 100), 'CDF')}</span>
+                <span className="font-semibold">{formatPrice(Math.round(subtotal * 100), 'USD')}</span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Réduction</span>
-                  <span className="font-semibold">-{formatPrice(Math.round(couponDiscount * 100), 'CDF')}</span>
+                  <span className="font-semibold">-{formatPrice(Math.round(couponDiscount * 100), 'USD')}</span>
                 </div>
               )}
               <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t border-gray-200">
                 <span>Total</span>
-                <span>{formatPrice(Math.round(finalTotal * 100), 'CDF')}</span>
+                <span>{formatPrice(Math.round(finalTotal * 100), 'USD')}</span>
               </div>
             </div>
 

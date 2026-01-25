@@ -321,7 +321,7 @@ export default function AdminOrdersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm font-black text-primary-600">
-                            {formatPrice(order.total_cents, order.currency || 'CDF')}
+                            {formatPrice(order.total_cents, order.currency || 'USD')}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
