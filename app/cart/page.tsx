@@ -20,6 +20,7 @@ export default function CartPage() {
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponId, setCouponId] = useState<string | null>(null)
   const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const supabase = createSupabaseClient()
 
   const subtotal = total
