@@ -20,6 +20,7 @@ interface ProductDetailProps {
     description: string | null
     price_cents: number
     compare_at_price_cents?: number | null
+    currency?: string
     stock: number
     is_refurbished: boolean
     condition: string
