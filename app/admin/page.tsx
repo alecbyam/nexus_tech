@@ -1,37 +1,23 @@
 'use client'
 
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { memo } from 'react'
 
-export default function AdminPage() {
-  const { user, loading, isAdmin } = useAuth()
-  const router = useRouter()
+// Composant de carte mémorisé pour éviter les re-renders
+const AdminCard = memo(({ href, title, description }: { href: string; title: string; description: string }) => (
+  <Link
+    href={href}
+    className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
+  >
+    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+    <p className="text-gray-600">{description}</p>
+  </Link>
+))
+AdminCard.displayName = 'AdminCard'
 
-  useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
-      router.push('/')
-    }
-  }, [user, isAdmin, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (!user || !isAdmin) {
-    return null
-  }
+function AdminPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">

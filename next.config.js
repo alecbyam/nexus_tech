@@ -17,8 +17,45 @@ const nextConfig = {
   swcMinify: true,
   // Optimisations de performance
   experimental: {
-    optimizePackageImports: ['@heroicons/react'],
+    optimizePackageImports: ['@heroicons/react', 'date-fns'],
     // optimizeCss: true, // Désactivé - nécessite critters
+  },
+  // Code splitting optimisé
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Bundle Supabase séparément
+            supabase: {
+              name: 'supabase',
+              chunks: 'all',
+              test: /[\\/]node_modules[\\/](@supabase|supabase)[\\/]/,
+              priority: 30,
+            },
+            // Bundle React séparément
+            react: {
+              name: 'react',
+              chunks: 'all',
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+              priority: 20,
+            },
+            // Autres vendors
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /[\\/]node_modules[\\/]/,
+              priority: 10,
+            },
+          },
+        },
+      }
+    }
+    return config
   },
   // Compiler optimizations
   compiler: {
