@@ -26,55 +26,46 @@ function AdminPageContent() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Admin</h1>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
+          <AdminCard
             href="/admin/products"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Gérer les produits</h2>
-            <p className="text-gray-600">Ajouter, modifier ou supprimer des produits</p>
-          </Link>
-
-          <Link
+            title="Gérer les produits"
+            description="Ajouter, modifier ou supprimer des produits"
+          />
+          <AdminCard
             href="/admin/orders"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Gérer les commandes</h2>
-            <p className="text-gray-600">Voir et gérer toutes les commandes</p>
-          </Link>
-
-          <Link
+            title="Gérer les commandes"
+            description="Voir et gérer toutes les commandes"
+          />
+          <AdminCard
             href="/admin/users"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Gérer les utilisateurs</h2>
-            <p className="text-gray-600">Voir et gérer tous les utilisateurs</p>
-          </Link>
-
-          <Link
+            title="Gérer les utilisateurs"
+            description="Voir et gérer tous les utilisateurs"
+          />
+          <AdminCard
             href="/admin/interests"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Intérêts des clients</h2>
-            <p className="text-gray-600">Voir les produits consultés et recherches</p>
-          </Link>
-
-          <Link
+            title="Intérêts des clients"
+            description="Voir les produits consultés et recherches"
+          />
+          <AdminCard
             href="/admin/stats"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Statistiques</h2>
-            <p className="text-gray-600">Analytics et performances</p>
-          </Link>
-
-          <Link
+            title="Statistiques"
+            description="Analytics et performances"
+          />
+          <AdminCard
             href="/admin/categories"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-100 hover:border-primary-300"
-          >
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Gérer les catégories</h2>
-            <p className="text-gray-600">Créer, modifier ou supprimer des catégories</p>
-          </Link>
+            title="Gérer les catégories"
+            description="Créer, modifier ou supprimer des catégories"
+          />
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <AdminGuard>
+      <AdminPageContent />
+    </AdminGuard>
   )
 }
