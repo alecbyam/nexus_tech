@@ -23,7 +23,7 @@ export default async function ProductPage({
       is_refurbished,
       condition,
       product_images(storage_path, is_primary),
-      categories(name, key)
+      categories(name, slug)
     `)
     .eq('id', params.id)
     .single()

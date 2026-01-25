@@ -98,7 +98,7 @@ const ProductCard = memo(({ product, index }: { product: Product; index: number 
               </>
             ) : (
               <span className="text-2xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                {formatPrice(product.price_cents, product.currency || 'CDF')}
+                {formatPrice(product.price_cents, product.currency || 'USD')}
               </span>
             )}
           </div>
