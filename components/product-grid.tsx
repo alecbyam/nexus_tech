@@ -4,6 +4,7 @@ import { memo } from 'react'
 import type { Database } from '@/types/database.types'
 import { WishlistButton } from '@/components/wishlist-button'
 import { CompareButton } from '@/components/compare-button'
+import { formatPrice } from '@/lib/utils/format-price'
 
 type Product = Database['public']['Tables']['products']['Row'] & {
   product_images: Array<{
@@ -89,15 +90,15 @@ const ProductCard = memo(({ product, index }: { product: Product; index: number 
             {hasDiscount ? (
               <>
                 <span className="text-2xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                  ${(product.price_cents / 100).toFixed(2)}
+                  {formatPrice(product.price_cents, product.currency || 'CDF')}
                 </span>
                 <span className="text-lg text-gray-400 line-through">
-                  ${(product.compare_at_price_cents! / 100).toFixed(2)}
+                  {formatPrice(product.compare_at_price_cents!, product.currency || 'CDF')}
                 </span>
               </>
             ) : (
               <span className="text-2xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                ${(product.price_cents / 100).toFixed(2)}
+                {formatPrice(product.price_cents, product.currency || 'CDF')}
               </span>
             )}
           </div>

@@ -133,7 +133,7 @@ export default function AdminStatsPage() {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Panier moyen</p>
                 <p className="text-3xl font-black text-primary-600">
-                  ${stats.averageOrderValue.toFixed(2)}
+                  {formatPrice(Math.round(stats.averageOrderValue * 100), 'CDF')}
                 </p>
               </div>
               <div>

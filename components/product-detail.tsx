@@ -11,6 +11,7 @@ import { WishlistButton } from '@/components/wishlist-button'
 import { StockNotificationButton } from '@/components/stock-notification-button'
 import { ProductReviews } from '@/components/product-reviews'
 import { addToBrowsingHistory } from '@/lib/services/browsing-history'
+import { formatPrice } from '@/lib/utils/format-price'
 
 interface ProductDetailProps {
   product: {
@@ -105,8 +106,9 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
   }
 
   const handleWhatsApp = () => {
+    const priceFormatted = formatPrice(product.price_cents, product.currency || 'CDF')
     const message = encodeURIComponent(
-      `Bonjour NEXUS TECH, je veux commander: ${product.name} (prix: $${(product.price_cents / 100).toFixed(2)}).`
+      `Bonjour NEXUS TECH, je veux commander: ${product.name} (prix: ${priceFormatted}).`
     )
     const phone = '243818510311'
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
@@ -195,10 +197,10 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
                 {hasDiscount ? (
                   <>
                     <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                      ${(product.price_cents / 100).toFixed(2)}
+                      {formatPrice(product.price_cents, product.currency || 'CDF')}
                     </span>
                     <span className="text-3xl text-gray-400 line-through">
-                      ${(product.compare_at_price_cents! / 100).toFixed(2)}
+                      {formatPrice(product.compare_at_price_cents!, product.currency || 'CDF')}
                     </span>
                     <span className="bg-red-500 text-white px-3 py-1 rounded-lg font-bold text-sm">
                       -{discountPercent}%
@@ -206,7 +208,7 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
                   </>
                 ) : (
                   <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                    ${(product.price_cents / 100).toFixed(2)}
+                    {formatPrice(product.price_cents, product.currency || 'CDF')}
                   </span>
                 )}
               </div>

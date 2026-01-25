@@ -18,6 +18,7 @@ export default async function ProductPage({
       description,
       price_cents,
       compare_at_price_cents,
+      currency,
       stock,
       is_refurbished,
       condition,

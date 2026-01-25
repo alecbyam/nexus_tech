@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { validateCoupon, useCoupon } from '@/lib/services/coupons'
 import { addPointsFromOrder } from '@/lib/services/loyalty'
+import { formatPrice } from '@/lib/utils/format-price'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clear, total } = useCartStore()
@@ -82,7 +83,7 @@ export default function CartPage() {
           user_id: user.id,
           status: 'pending' as const,
           total_cents: Math.round(finalTotal * 100),
-          currency: 'USD',
+          currency: 'CDF',
         })
         .select()
         .single()
@@ -236,17 +237,17 @@ export default function CartPage() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
                 <span>Sous-total</span>
-                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold">{formatPrice(Math.round(subtotal * 100), 'CDF')}</span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Réduction</span>
-                  <span className="font-semibold">-${couponDiscount.toFixed(2)}</span>
+                  <span className="font-semibold">-{formatPrice(Math.round(couponDiscount * 100), 'CDF')}</span>
                 </div>
               )}
               <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t border-gray-200">
                 <span>Total</span>
-                <span>${finalTotal.toFixed(2)}</span>
+                <span>{formatPrice(Math.round(finalTotal * 100), 'CDF')}</span>
               </div>
             </div>
 
