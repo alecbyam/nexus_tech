@@ -34,7 +34,7 @@ export default function EditProductPage() {
     price_cents: '',
     compare_at_price_cents: '',
     stock: '0',
-    currency: 'USD',
+    currency: 'CDF',
     is_refurbished: false,
     is_active: true,
   })
@@ -393,7 +393,7 @@ export default function EditProductPage() {
               {/* Prix de vente */}
               <div>
                 <label htmlFor="price_cents" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Prix de vente (USD) <span className="text-red-500">*</span>
+                  Prix de vente (CDF) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -411,7 +411,7 @@ export default function EditProductPage() {
               {/* Prix d'ancrage */}
               <div>
                 <label htmlFor="compare_at_price_cents" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Prix d'ancrage (USD)
+                  Prix d'ancrage (CDF)
                   <span className="text-xs text-gray-500 ml-2">(Prix barré pour comparaison)</span>
                 </label>
                 <input
