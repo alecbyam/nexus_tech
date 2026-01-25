@@ -5,6 +5,7 @@ import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/utils/format-price'
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 export interface AdminStats {
   totalProducts: number
@@ -41,11 +42,107 @@ export default function AdminStatsPage() {
 
   async function loadStats() {
     try {
-      const [statsData, topProductsData, salesData] = await Promise.all([
-        getAdminStats(),
-        getTopSellingProducts(10),
-        getSalesByPeriod(period),
+      const supabase = createSupabaseClient()
+      
+      // Charger les statistiques en parallèle
+      const [
+        totalProductsResult,
+        activeProductsResult,
+        totalOrdersResult,
+        pendingOrdersResult,
+        totalUsersResult,
+        lowStockResult,
+        outOfStockResult,
+        recentOrdersResult,
+        ordersData,
+      ] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('orders').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true }).gt('stock', 0).lte('stock', 10),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('stock', 0),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase
+          .from('orders')
+          .select('total_cents, status')
+          .neq('status', 'cancelled')
+          .limit(5000),
       ])
+
+      const totalRevenue = ordersData.data?.reduce((sum, order) => sum + order.total_cents, 0) || 0
+      const averageOrderValue =
+        ordersData.data && ordersData.data.length > 0
+          ? totalRevenue / ordersData.data.length / 100
+          : 0
+
+      const statsData: AdminStats = {
+        totalProducts: totalProductsResult.count || 0,
+        activeProducts: activeProductsResult.count || 0,
+        totalOrders: totalOrdersResult.count || 0,
+        pendingOrders: pendingOrdersResult.count || 0,
+        totalRevenue: totalRevenue / 100,
+        totalUsers: totalUsersResult.count || 0,
+        lowStockProducts: lowStockResult.count || 0,
+        outOfStockProducts: outOfStockResult.count || 0,
+        recentOrders: recentOrdersResult.count || 0,
+        averageOrderValue: Math.round(averageOrderValue * 100) / 100,
+      }
+
+      // Top produits vendus
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('product_id, quantity, name_snapshot')
+        .limit(10000)
+
+      const productSales = new Map<string, { name: string; quantity: number }>()
+      orderItems?.forEach((item) => {
+        if (!item.product_id) return
+        const current = productSales.get(item.product_id) || {
+          name: item.name_snapshot,
+          quantity: 0,
+        }
+        productSales.set(item.product_id, {
+          name: item.name_snapshot,
+          quantity: current.quantity + item.quantity,
+        })
+      })
+
+      const topProductsData = Array.from(productSales.entries())
+        .map(([productId, data]) => ({
+          productId,
+          name: data.name,
+          quantity: data.quantity,
+        }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10)
+
+      // Ventes par période
+      const startDate = new Date(Date.now() - period * 24 * 60 * 60 * 1000).toISOString()
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total_cents, created_at, status')
+        .gte('created_at', startDate)
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: true })
+        .limit(5000)
+
+      const salesByDay = new Map<string, number>()
+      orders?.forEach((order) => {
+        const date = new Date(order.created_at).toISOString().split('T')[0]
+        const current = salesByDay.get(date) || 0
+        salesByDay.set(date, current + order.total_cents / 100)
+      })
+
+      const salesData = Array.from(salesByDay.entries()).map(([date, revenue]) => ({
+        date,
+        revenue,
+      }))
+
       setStats(statsData)
       setTopProducts(topProductsData)
       setSalesData(salesData)
