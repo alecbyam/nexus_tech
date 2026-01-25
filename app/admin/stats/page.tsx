@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
+import { formatPrice } from '@/lib/utils/format-price'
 
 export interface AdminStats {
   totalProducts: number
