@@ -28,6 +28,7 @@ export default function AdminStatsPage() {
   const [salesData, setSalesData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(30)
+  const supabase = createSupabaseClient()
 
   useEffect(() => {
     if (authLoading) return
@@ -42,7 +43,7 @@ export default function AdminStatsPage() {
 
   async function loadStats() {
     try {
-      const supabase = createSupabaseClient()
+      setLoading(true)
       
       // Charger les statistiques en parallèle
       const [
@@ -168,15 +169,17 @@ export default function AdminStatsPage() {
 
   if (!stats) return null
 
+  const maxRevenue = salesData.length > 0 ? Math.max(...salesData.map((d) => d.revenue)) : 1
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-white">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
-            Statistiques
+            Statistiques & Analytics
           </h1>
-          <p className="text-gray-600 text-lg">Vue d'ensemble de votre activité</p>
+          <p className="text-gray-600 text-lg">Vue d'ensemble détaillée de votre activité</p>
         </div>
 
         {/* Statistiques principales */}
@@ -184,29 +187,36 @@ export default function AdminStatsPage() {
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
             <div className="text-3xl font-black mb-2">{stats.totalProducts}</div>
             <div className="text-sm font-semibold opacity-90">Produits</div>
+            <div className="text-xs opacity-75 mt-1">{stats.activeProducts} actifs</div>
           </div>
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
             <div className="text-3xl font-black mb-2">{stats.totalOrders}</div>
             <div className="text-sm font-semibold opacity-90">Commandes</div>
+            <div className="text-xs opacity-75 mt-1">{stats.pendingOrders} en attente</div>
           </div>
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <div className="text-3xl font-black mb-2">${stats.totalRevenue.toFixed(0)}</div>
+            <div className="text-3xl font-black mb-2">
+              {formatPrice(Math.round(stats.totalRevenue * 100), 'USD').replace('$', '')}
+            </div>
             <div className="text-sm font-semibold opacity-90">Revenus</div>
+            <div className="text-xs opacity-75 mt-1">Total</div>
           </div>
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
             <div className="text-3xl font-black mb-2">{stats.totalUsers}</div>
             <div className="text-sm font-semibold opacity-90">Utilisateurs</div>
+            <div className="text-xs opacity-75 mt-1">Inscrits</div>
           </div>
           <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
             <div className="text-3xl font-black mb-2">{stats.pendingOrders}</div>
             <div className="text-sm font-semibold opacity-90">En attente</div>
+            <div className="text-xs opacity-75 mt-1">À traiter</div>
           </div>
         </div>
 
         {/* Alertes stock */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Alertes Stock</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">⚠️ Alertes Stock</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div>
@@ -226,7 +236,7 @@ export default function AdminStatsPage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Performance</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">📊 Performance</h3>
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Panier moyen</p>
@@ -235,7 +245,7 @@ export default function AdminStatsPage() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Commandes (7 jours)</p>
+                <p className="text-sm text-gray-600 mb-1">Commandes (7 derniers jours)</p>
                 <p className="text-3xl font-black text-blue-600">{stats.recentOrders}</p>
               </div>
             </div>
@@ -245,11 +255,11 @@ export default function AdminStatsPage() {
         {/* Produits les plus vendus */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Produits les plus vendus</h3>
+            <h3 className="text-xl font-bold text-gray-900">🏆 Produits les plus vendus</h3>
             <select
               value={period}
               onChange={(e) => setPeriod(Number(e.target.value))}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg"
+              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value={7}>7 derniers jours</option>
               <option value={30}>30 derniers jours</option>
@@ -261,6 +271,9 @@ export default function AdminStatsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                    Rang
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">
                     Produit
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase">
@@ -271,7 +284,7 @@ export default function AdminStatsPage() {
               <tbody className="divide-y divide-gray-100">
                 {topProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
                       Aucune vente enregistrée
                     </td>
                   </tr>
@@ -279,10 +292,17 @@ export default function AdminStatsPage() {
                   topProducts.map((product, index) => (
                     <tr key={product.productId} className="hover:bg-gray-50">
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                          <span className="font-semibold text-gray-900">{product.name}</span>
+                        <div className="flex items-center gap-2">
+                          {index === 0 && <span className="text-2xl">🥇</span>}
+                          {index === 1 && <span className="text-2xl">🥈</span>}
+                          {index === 2 && <span className="text-2xl">🥉</span>}
+                          {index > 2 && (
+                            <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
+                          )}
                         </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="font-semibold text-gray-900">{product.name}</span>
                       </td>
                       <td className="px-4 py-4 text-right">
                         <span className="text-lg font-black text-primary-600">
@@ -297,12 +317,12 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        {/* Graphique des ventes (simplifié) */}
+        {/* Graphique des ventes */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Ventes sur {period} jours
+            📈 Ventes sur {period} jours
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {salesData.length === 0 ? (
               <p className="text-gray-500 text-center py-8">Aucune donnée disponible</p>
             ) : (
@@ -314,17 +334,15 @@ export default function AdminStatsPage() {
                       month: 'short',
                     })}
                   </div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-8 relative overflow-hidden">
+                  <div className="flex-1 bg-gray-200 rounded-full h-10 relative overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-full rounded-full flex items-center justify-end pr-2"
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500"
                       style={{
-                        width: `${
-                          (day.revenue / Math.max(...salesData.map((d) => d.revenue))) * 100
-                        }%`,
+                        width: `${(day.revenue / maxRevenue) * 100}%`,
                       }}
                     >
                       <span className="text-xs font-bold text-white">
-                        ${day.revenue.toFixed(0)}
+                        {formatPrice(Math.round(day.revenue * 100), 'USD')}
                       </span>
                     </div>
                   </div>
