@@ -209,7 +209,7 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
                   </>
                 ) : (
                   <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                    {formatPrice(product.price_cents, product.currency || 'CDF')}
+                    {formatPrice(product.price_cents, product.currency || 'USD')}
                   </span>
                 )}
               </div>
