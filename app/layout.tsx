@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { SEOVerification } from '@/components/seo-verification'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <SEOVerification />
       </head>
       <body className={inter.className}>
         <ErrorBoundary>

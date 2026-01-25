@@ -2,3 +2,11 @@ SUPABASE_URL=https://njgmuhrkbwdeijnbqync.supabase.co
 SUPABASE_ANON_KEY=sb_publishable_oo2XgOSgK79l-Ywwr9DXxQ_8JEFTp_B
 WHATSAPP_PHONE=243818510311
 
+# Codes de vérification des moteurs de recherche (SEO)
+# Obtenez ces codes depuis les outils de webmaster de chaque moteur de recherche
+NEXT_PUBLIC_GOOGLE_VERIFICATION=
+NEXT_PUBLIC_BING_VERIFICATION=
+NEXT_PUBLIC_YANDEX_VERIFICATION=
+NEXT_PUBLIC_BAIDU_VERIFICATION=
+NEXT_PUBLIC_PINTEREST_VERIFICATION=
+NEXT_PUBLIC_FACEBOOK_VERIFICATION=
