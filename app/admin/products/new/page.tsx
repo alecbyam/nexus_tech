@@ -29,7 +29,7 @@ export default function NewProductPage() {
     price_cents: '',
     compare_at_price_cents: '', // Prix d'ancrage
     stock: '0',
-    currency: 'CDF',
+    currency: 'USD',
     is_refurbished: false,
     is_active: true,
   })
@@ -358,7 +358,7 @@ export default function NewProductPage() {
               {/* Prix d'ancrage (comparaison) */}
               <div>
                 <label htmlFor="compare_at_price_cents" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Prix d'ancrage (CDF)
+                  Prix d'ancrage (USD)
                   <span className="text-xs text-gray-500 ml-2">(Prix barré pour comparaison)</span>
                 </label>
                 <input
