@@ -221,10 +221,18 @@ export default function AdminOrderDetailPage() {
             </div>
           </div>
 
+          {/* Adresse de livraison */}
+          {order.delivery_address && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">📍 Adresse de Livraison</h2>
+              <p className="text-gray-700 font-medium">{order.delivery_address}</p>
+            </div>
+          )}
+
           {/* Note Client */}
           {order.customer_note && (
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Note du Client</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">📝 Note du Client</h2>
               <p className="text-gray-700">{order.customer_note}</p>
             </div>
           )}
