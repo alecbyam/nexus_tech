@@ -339,7 +339,7 @@ export default function NewProductPage() {
               {/* Prix de vente */}
               <div>
                 <label htmlFor="price_cents" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Prix de vente (CDF) <span className="text-red-500">*</span>
+                  Prix de vente (USD) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"

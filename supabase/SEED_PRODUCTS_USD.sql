@@ -2,15 +2,16 @@
 -- Instructions: Exécuter ce script dans Supabase SQL Editor après la migration complète
 
 -- D'abord, vérifier et créer des catégories si elles n'existent pas
-INSERT INTO categories (key, name, slug, is_active, sort_order)
+-- Note: La table categories n'a pas de colonne "key", on utilise "slug" comme identifiant unique
+INSERT INTO categories (name, slug, is_active, sort_order)
 VALUES 
-  ('smartphones', 'Smartphones', 'smartphones', true, 1),
-  ('ordinateurs', 'Ordinateurs', 'ordinateurs', true, 2),
-  ('tablettes', 'Tablettes', 'tablettes', true, 3),
-  ('accessoires', 'Accessoires', 'accessoires', true, 4),
-  ('televiseurs', 'Téléviseurs', 'televiseurs', true, 5),
-  ('ecouteurs', 'Écouteurs & Audio', 'ecouteurs', true, 6)
-ON CONFLICT (key) DO NOTHING;
+  ('Smartphones', 'smartphones', true, 1),
+  ('Ordinateurs', 'ordinateurs', true, 2),
+  ('Tablettes', 'tablettes', true, 3),
+  ('Accessoires', 'accessoires', true, 4),
+  ('Téléviseurs', 'televiseurs', true, 5),
+  ('Écouteurs & Audio', 'ecouteurs', true, 6)
+ON CONFLICT (slug) DO NOTHING;
 
 -- Récupérer les IDs des catégories et insérer les produits
 DO $$
@@ -22,13 +23,13 @@ DECLARE
   cat_televiseurs_id UUID;
   cat_ecouteurs_id UUID;
 BEGIN
-  -- Récupérer les IDs des catégories
-  SELECT id INTO cat_smartphones_id FROM categories WHERE key = 'smartphones';
-  SELECT id INTO cat_ordinateurs_id FROM categories WHERE key = 'ordinateurs';
-  SELECT id INTO cat_tablettes_id FROM categories WHERE key = 'tablettes';
-  SELECT id INTO cat_accessoires_id FROM categories WHERE key = 'accessoires';
-  SELECT id INTO cat_televiseurs_id FROM categories WHERE key = 'televiseurs';
-  SELECT id INTO cat_ecouteurs_id FROM categories WHERE key = 'ecouteurs';
+  -- Récupérer les IDs des catégories (utiliser slug au lieu de key)
+  SELECT id INTO cat_smartphones_id FROM categories WHERE slug = 'smartphones';
+  SELECT id INTO cat_ordinateurs_id FROM categories WHERE slug = 'ordinateurs';
+  SELECT id INTO cat_tablettes_id FROM categories WHERE slug = 'tablettes';
+  SELECT id INTO cat_accessoires_id FROM categories WHERE slug = 'accessoires';
+  SELECT id INTO cat_televiseurs_id FROM categories WHERE slug = 'televiseurs';
+  SELECT id INTO cat_ecouteurs_id FROM categories WHERE slug = 'ecouteurs';
 
   -- Produits de test avec prix en USD (en cents)
   -- Exemple: $999.99 = 99999 cents
@@ -97,3 +98,10 @@ BEGIN
   RAISE NOTICE '📱 % tablettes ajoutées', (SELECT COUNT(*) FROM products WHERE category_id = cat_tablettes_id);
   RAISE NOTICE '🎧 % accessoires ajoutés', (SELECT COUNT(*) FROM products WHERE category_id = cat_accessoires_id);
 END $$;
+
+-- Afficher un résumé des données créées
+SELECT 
+  '✅ Migration terminée!' as status,
+  (SELECT COUNT(*) FROM categories) as total_categories,
+  (SELECT COUNT(*) FROM products) as total_products,
+  (SELECT COUNT(*) FROM products WHERE currency = 'USD') as products_usd;
