@@ -304,6 +304,11 @@ export default function AdminOrdersPage() {
                             {order.profiles?.phone && (
                               <div className="text-xs text-gray-500">{order.profiles.phone}</div>
                             )}
+                            {order.delivery_address && (
+                              <div className="text-xs text-blue-600 mt-1">
+                                📍 {order.delivery_address}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

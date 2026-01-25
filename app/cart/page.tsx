@@ -85,6 +85,8 @@ export default function CartPage() {
           status: 'pending' as const,
           total_cents: Math.round(finalTotal * 100),
           currency: 'USD',
+          delivery_address: deliveryAddress.trim() || null,
+          customer_note: deliveryAddress.trim() ? `Adresse de livraison: ${deliveryAddress.trim()}` : null,
         })
         .select()
         .single()
@@ -117,6 +119,7 @@ export default function CartPage() {
       setCouponCode('')
       setCouponDiscount(0)
       setCouponId(null)
+      setDeliveryAddress('')
 
       router.push(`/orders/${order.id}`)
     } catch (error: any) {
@@ -234,6 +237,24 @@ export default function CartPage() {
                 </Link>
               </div>
             )}
+
+            {/* Adresse de livraison */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <label htmlFor="deliveryAddress" className="block text-sm font-semibold text-gray-700 mb-2">
+                📍 Adresse de livraison <span className="text-gray-500 text-xs font-normal">(optionnel)</span>
+              </label>
+              <textarea
+                id="deliveryAddress"
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                placeholder="Ex: Avenue X, Quartier Y, Commune Z, Ville"
+                rows={3}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Indiquez votre adresse complète pour faciliter la livraison
+              </p>
+            </div>
 
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
