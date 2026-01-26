@@ -11,6 +11,7 @@ export type ProductCondition = 'new' | 'refurbished'
 export type DiscountType = 'percentage' | 'fixed'
 export type LoyaltyTransactionType = 'earned' | 'redeemed' | 'expired' | 'adjusted'
 export type NotificationType = 'new_order' | 'low_stock' | 'new_review' | 'stock_alert'
+export type UserRole = 'client' | 'staff' | 'admin' | 'tech'
 
 export interface Database {
   public: {
@@ -20,7 +21,8 @@ export interface Database {
           id: string
           full_name: string | null
           phone: string | null
-          is_admin: boolean
+          is_admin: boolean // Conservé pour compatibilité, utiliser role à la place
+          role: UserRole
           created_at: string
           updated_at: string
         }
@@ -28,7 +30,8 @@ export interface Database {
           id: string
           full_name?: string | null
           phone?: string | null
-          is_admin?: boolean
+          is_admin?: boolean // Conservé pour compatibilité
+          role?: UserRole
           created_at?: string
           updated_at?: string
         }
@@ -36,7 +39,8 @@ export interface Database {
           id?: string
           full_name?: string | null
           phone?: string | null
-          is_admin?: boolean
+          is_admin?: boolean // Conservé pour compatibilité
+          role?: UserRole
           created_at?: string
           updated_at?: string
         }

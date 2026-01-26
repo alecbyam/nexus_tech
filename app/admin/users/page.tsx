@@ -21,6 +21,8 @@ export default function AdminUsersPage() {
   const [stats, setStats] = useState({
     total: 0,
     admins: 0,
+    staff: 0,
+    tech: 0,
     regular: 0,
   })
   const supabase = createSupabaseClient()
@@ -48,18 +50,30 @@ export default function AdminUsersPage() {
       const { count: adminCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('is_admin', true)
+        .eq('role', 'admin')
+
+      const { count: staffCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'staff')
+
+      const { count: techCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'tech')
 
       setStats({
         total: totalCount || 0,
         admins: adminCount || 0,
-        regular: (totalCount || 0) - (adminCount || 0),
+        staff: staffCount || 0,
+        tech: techCount || 0,
+        regular: (totalCount || 0) - (adminCount || 0) - (staffCount || 0) - (techCount || 0),
       })
 
       // Charger seulement les utilisateurs récents (limite initiale)
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, phone, role, is_admin, created_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(100) // Limite initiale pour un chargement rapide
 
@@ -91,17 +105,25 @@ export default function AdminUsersPage() {
     setFilteredUsers(filtered)
   }, [searchQuery, users])
 
-  async function handleToggleAdmin(userId: string, currentStatus: boolean) {
+  async function handleUpdateRole(userId: string, newRole: string) {
     try {
+      if (!['client', 'staff', 'tech', 'admin'].includes(newRole)) {
+        alert('Rôle invalide')
+        return
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ is_admin: !currentStatus })
+        .update({ 
+          role: newRole,
+          is_admin: newRole === 'admin' // Mettre à jour is_admin pour compatibilité
+        })
         .eq('id', userId)
 
       if (error) throw error
       await loadUsers()
     } catch (error) {
-      console.error('Error updating admin status:', error)
+      console.error('Error updating user role:', error)
       alert('Erreur lors de la mise à jour')
     }
   }
@@ -142,7 +164,7 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <div className="text-3xl font-black text-primary-600 mb-2">{stats.total}</div>
               <div className="text-sm text-gray-600 font-semibold">Total utilisateurs</div>
@@ -152,8 +174,12 @@ export default function AdminUsersPage() {
               <div className="text-sm text-gray-600 font-semibold">Administrateurs</div>
             </div>
             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+              <div className="text-3xl font-black text-orange-600 mb-2">{stats.staff || 0}</div>
+              <div className="text-sm text-gray-600 font-semibold">Staff</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <div className="text-3xl font-black text-gray-600 mb-2">{stats.regular}</div>
-              <div className="text-sm text-gray-600 font-semibold">Utilisateurs réguliers</div>
+              <div className="text-sm text-gray-600 font-semibold">Clients</div>
             </div>
           </div>
 
@@ -184,7 +210,7 @@ export default function AdminUsersPage() {
                     Téléphone
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Admin
+                    Rôle
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">
                     Date d'inscription
@@ -222,13 +248,24 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {userProfile.is_admin ? (
+                      {userProfile.role === 'admin' && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-500 text-white">
                           Admin
                         </span>
-                      ) : (
+                      )}
+                      {userProfile.role === 'staff' && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-500 text-white">
+                          Staff
+                        </span>
+                      )}
+                      {userProfile.role === 'tech' && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-500 text-white">
+                          Tech
+                        </span>
+                      )}
+                      {userProfile.role === 'client' && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
-                          Utilisateur
+                          Client
                         </span>
                       )}
                     </td>
@@ -239,16 +276,16 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleToggleAdmin(userProfile.id, userProfile.is_admin)}
-                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            userProfile.is_admin
-                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                              : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                          }`}
+                        <select
+                          value={userProfile.role || 'client'}
+                          onChange={(e) => handleUpdateRole(userProfile.id, e.target.value)}
+                          className="px-3 py-2 rounded-lg font-semibold text-sm border-2 border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         >
-                          {userProfile.is_admin ? 'Retirer Admin' : 'Promouvoir Admin'}
-                        </button>
+                          <option value="client">Client</option>
+                          <option value="staff">Staff</option>
+                          <option value="tech">Tech</option>
+                          <option value="admin">Admin</option>
+                        </select>
                         <a
                           href={`/admin/users/${userProfile.id}`}
                           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200 transition-all"

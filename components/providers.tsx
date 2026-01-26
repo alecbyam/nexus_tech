@@ -5,10 +5,13 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
+export type UserRole = 'client' | 'staff' | 'admin' | 'tech'
+
 interface AuthContextType {
   user: User | null
   loading: boolean
-  isAdmin: boolean
+  isAdmin: boolean // Conservé pour compatibilité
+  role: UserRole | null
   signOut: () => Promise<void>
 }
 
@@ -16,33 +19,39 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAdmin: false,
+  role: null,
   signOut: async () => {},
 })
 
-// Cache en mémoire pour le statut admin (évite les requêtes répétées)
-const adminCache = new Map<string, { isAdmin: boolean; timestamp: number }>()
-const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes (augmenté de 5 à 10)
+// Cache en mémoire pour le rôle utilisateur (évite les requêtes répétées)
+interface RoleCache {
+  role: UserRole
+  timestamp: number
+}
+
+const roleCache = new Map<string, RoleCache>()
+const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
 
 // Fonction pour sauvegarder dans localStorage
-function saveAdminCacheToStorage(userId: string, isAdmin: boolean) {
+function saveRoleCacheToStorage(userId: string, role: UserRole) {
   if (typeof window === 'undefined') return
   try {
     const cacheData = {
       userId,
-      isAdmin,
+      role,
       timestamp: Date.now(),
     }
-    localStorage.setItem('admin_cache', JSON.stringify(cacheData))
+    localStorage.setItem('role_cache', JSON.stringify(cacheData))
   } catch (error) {
     // Ignorer les erreurs localStorage (mode privé, quota, etc.)
   }
 }
 
 // Fonction pour charger depuis localStorage
-function loadAdminCacheFromStorage(userId: string): boolean | null {
+function loadRoleCacheFromStorage(userId: string): UserRole | null {
   if (typeof window === 'undefined') return null
   try {
-    const cached = localStorage.getItem('admin_cache')
+    const cached = localStorage.getItem('role_cache')
     if (!cached) return null
     
     const cacheData = JSON.parse(cached)
@@ -51,7 +60,7 @@ function loadAdminCacheFromStorage(userId: string): boolean | null {
       cacheData.userId === userId &&
       Date.now() - cacheData.timestamp < CACHE_DURATION
     ) {
-      return cacheData.isAdmin
+      return cacheData.role
     }
   } catch (error) {
     // Ignorer les erreurs
@@ -66,56 +75,59 @@ export function useAuth() {
 export function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [role, setRole] = useState<UserRole | null>(null)
   const supabase = useMemo(() => createSupabaseClient(), [])
   const router = useRouter()
 
-  const checkAdminStatus = useCallback(async (userId: string, useCache: boolean = true) => {
+  // Calculer isAdmin à partir du rôle (pour compatibilité)
+  const isAdmin = role === 'admin'
+
+  const checkUserRole = useCallback(async (userId: string, useCache: boolean = true) => {
     // 1. Vérifier le cache en mémoire d'abord
     if (useCache) {
-      const cached = adminCache.get(userId)
+      const cached = roleCache.get(userId)
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        setIsAdmin(cached.isAdmin)
+        setRole(cached.role)
         setLoading(false)
         return
       }
 
       // 2. Vérifier le cache localStorage
-      const localStorageCache = loadAdminCacheFromStorage(userId)
+      const localStorageCache = loadRoleCacheFromStorage(userId)
       if (localStorageCache !== null) {
-        setIsAdmin(localStorageCache)
+        setRole(localStorageCache)
         setLoading(false)
         // Mettre à jour le cache en mémoire
-        adminCache.set(userId, { isAdmin: localStorageCache, timestamp: Date.now() })
+        roleCache.set(userId, { role: localStorageCache, timestamp: Date.now() })
         return
       }
     }
 
     try {
-      // 3. Requête optimisée - seulement le champ nécessaire, avec maybeSingle pour éviter les erreurs
+      // 3. Requête optimisée - récupérer le rôle
       const { data, error } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('role')
         .eq('id', userId)
-        .maybeSingle() // Utilise maybeSingle au lieu de single pour éviter les erreurs si pas de profil
+        .maybeSingle()
 
       if (error) {
-        console.error('Error checking admin status:', error)
-        setIsAdmin(false)
-        const cacheValue = { isAdmin: false, timestamp: Date.now() }
-        adminCache.set(userId, cacheValue)
-        saveAdminCacheToStorage(userId, false)
+        console.error('Error checking user role:', error)
+        setRole('client') // Rôle par défaut en cas d'erreur
+        const cacheValue = { role: 'client' as UserRole, timestamp: Date.now() }
+        roleCache.set(userId, cacheValue)
+        saveRoleCacheToStorage(userId, 'client')
       } else {
-        const adminValue = data?.is_admin ?? false
-        setIsAdmin(adminValue)
+        const userRole = (data?.role as UserRole) || 'client'
+        setRole(userRole)
         // Mettre en cache (mémoire + localStorage)
-        const cacheValue = { isAdmin: adminValue, timestamp: Date.now() }
-        adminCache.set(userId, cacheValue)
-        saveAdminCacheToStorage(userId, adminValue)
+        const cacheValue = { role: userRole, timestamp: Date.now() }
+        roleCache.set(userId, cacheValue)
+        saveRoleCacheToStorage(userId, userRole)
       }
     } catch (error) {
-      console.error('Error checking admin status:', error)
-      setIsAdmin(false)
+      console.error('Error checking user role:', error)
+      setRole('client')
     } finally {
       setLoading(false)
     }
@@ -137,21 +149,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       if (session?.user) {
         // Vérifier le cache immédiatement avant de faire la requête
-        const cached = adminCache.get(session.user.id)
-        const localStorageCache = loadAdminCacheFromStorage(session.user.id)
+        const cached = roleCache.get(session.user.id)
+        const localStorageCache = loadRoleCacheFromStorage(session.user.id)
         
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-          setIsAdmin(cached.isAdmin)
+          setRole(cached.role)
           setLoading(false)
         } else if (localStorageCache !== null) {
-          setIsAdmin(localStorageCache)
+          setRole(localStorageCache)
           setLoading(false)
-          adminCache.set(session.user.id, { isAdmin: localStorageCache, timestamp: Date.now() })
+          roleCache.set(session.user.id, { role: localStorageCache, timestamp: Date.now() })
         } else {
           // Pas de cache, faire la requête
-          checkAdminStatus(session.user.id, false)
+          checkUserRole(session.user.id, false)
         }
       } else {
+        setRole(null)
         setLoading(false)
       }
     })
@@ -165,18 +178,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       if (session?.user) {
         // Invalider le cache lors d'un changement d'auth
-        adminCache.delete(session.user.id)
+        roleCache.delete(session.user.id)
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('admin_cache')
+          localStorage.removeItem('role_cache')
         }
-        await checkAdminStatus(session.user.id, false)
+        await checkUserRole(session.user.id, false)
       } else {
-        setIsAdmin(false)
+        setRole(null)
         setLoading(false)
         // Nettoyer le cache
-        adminCache.clear()
+        roleCache.clear()
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('admin_cache')
+          localStorage.removeItem('role_cache')
         }
       }
     })
@@ -192,11 +205,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       setUser(null)
-      setIsAdmin(false)
+      setRole(null)
       // Nettoyer les caches
-      adminCache.clear()
+      roleCache.clear()
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('admin_cache')
+        localStorage.removeItem('role_cache')
       }
       router.push('/')
       router.refresh()
@@ -207,7 +220,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin: role === 'admin', role, signOut }}>
       {children}
     </AuthContext.Provider>
   )
