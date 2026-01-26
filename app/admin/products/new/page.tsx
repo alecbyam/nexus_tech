@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
 import type { Database } from '@/types/database.types'
@@ -10,8 +10,7 @@ import { uploadProductImage, attachProductImage } from '@/lib/utils/image-upload
 
 type Category = Database['public']['Tables']['categories']['Row']
 
-export default function NewProductPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function NewProductPageContent() {
   const router = useRouter()
   const supabase = createSupabaseClient()
   const [loading, setLoading] = useState(true)
@@ -35,15 +34,8 @@ export default function NewProductPage() {
   })
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadCategories()
-  }, [user, isAdmin, authLoading, router, loadCategories])
+  }, [loadCategories])
 
   const loadCategories = useCallback(async () => {
     try {
@@ -167,12 +159,17 @@ export default function NewProductPage() {
         throw new Error('Vous devez être connecté pour créer un produit')
       }
 
-      // Vérifier que l'utilisateur est admin
-      const { data: profile } = await supabase
+      // Vérifier que l'utilisateur est admin (utiliser maybeSingle pour éviter les erreurs)
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', currentUser.id)
-        .single()
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('Error checking admin status:', profileError)
+        throw new Error('Erreur lors de la vérification des permissions')
+      }
 
       if (!profile?.is_admin) {
         throw new Error('Vous devez être administrateur pour créer un produit')
@@ -243,7 +240,7 @@ export default function NewProductPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -538,5 +535,13 @@ export default function NewProductPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function NewProductPage() {
+  return (
+    <AdminGuard>
+      <NewProductPageContent />
+    </AdminGuard>
   )
 }
