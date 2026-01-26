@@ -19,9 +19,45 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 })
 
-// Cache pour le statut admin (évite les requêtes répétées)
+// Cache en mémoire pour le statut admin (évite les requêtes répétées)
 const adminCache = new Map<string, { isAdmin: boolean; timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes (augmenté de 5 à 10)
+
+// Fonction pour sauvegarder dans localStorage
+function saveAdminCacheToStorage(userId: string, isAdmin: boolean) {
+  if (typeof window === 'undefined') return
+  try {
+    const cacheData = {
+      userId,
+      isAdmin,
+      timestamp: Date.now(),
+    }
+    localStorage.setItem('admin_cache', JSON.stringify(cacheData))
+  } catch (error) {
+    // Ignorer les erreurs localStorage (mode privé, quota, etc.)
+  }
+}
+
+// Fonction pour charger depuis localStorage
+function loadAdminCacheFromStorage(userId: string): boolean | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = localStorage.getItem('admin_cache')
+    if (!cached) return null
+    
+    const cacheData = JSON.parse(cached)
+    // Vérifier que c'est pour le même utilisateur et que le cache est encore valide
+    if (
+      cacheData.userId === userId &&
+      Date.now() - cacheData.timestamp < CACHE_DURATION
+    ) {
+      return cacheData.isAdmin
+    }
+  } catch (error) {
+    // Ignorer les erreurs
+  }
+  return null
+}
 
 export function useAuth() {
   return useContext(AuthContext)
@@ -34,32 +70,48 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createSupabaseClient(), [])
   const router = useRouter()
 
-  const checkAdminStatus = useCallback(async (userId: string) => {
-    // Vérifier le cache d'abord
-    const cached = adminCache.get(userId)
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      setIsAdmin(cached.isAdmin)
-      setLoading(false)
-      return
+  const checkAdminStatus = useCallback(async (userId: string, useCache: boolean = true) => {
+    // 1. Vérifier le cache en mémoire d'abord
+    if (useCache) {
+      const cached = adminCache.get(userId)
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        setIsAdmin(cached.isAdmin)
+        setLoading(false)
+        return
+      }
+
+      // 2. Vérifier le cache localStorage
+      const localStorageCache = loadAdminCacheFromStorage(userId)
+      if (localStorageCache !== null) {
+        setIsAdmin(localStorageCache)
+        setLoading(false)
+        // Mettre à jour le cache en mémoire
+        adminCache.set(userId, { isAdmin: localStorageCache, timestamp: Date.now() })
+        return
+      }
     }
 
     try {
-      // Requête optimisée - seulement le champ nécessaire
+      // 3. Requête optimisée - seulement le champ nécessaire, avec maybeSingle pour éviter les erreurs
       const { data, error } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', userId)
-        .single()
+        .maybeSingle() // Utilise maybeSingle au lieu de single pour éviter les erreurs si pas de profil
 
       if (error) {
         console.error('Error checking admin status:', error)
         setIsAdmin(false)
-        adminCache.set(userId, { isAdmin: false, timestamp: Date.now() })
+        const cacheValue = { isAdmin: false, timestamp: Date.now() }
+        adminCache.set(userId, cacheValue)
+        saveAdminCacheToStorage(userId, false)
       } else {
         const adminValue = data?.is_admin ?? false
         setIsAdmin(adminValue)
-        // Mettre en cache
-        adminCache.set(userId, { isAdmin: adminValue, timestamp: Date.now() })
+        // Mettre en cache (mémoire + localStorage)
+        const cacheValue = { isAdmin: adminValue, timestamp: Date.now() }
+        adminCache.set(userId, cacheValue)
+        saveAdminCacheToStorage(userId, adminValue)
       }
     } catch (error) {
       console.error('Error checking admin status:', error)
@@ -84,7 +136,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       setUser(session?.user ?? null)
       if (session?.user) {
-        checkAdminStatus(session.user.id)
+        // Vérifier le cache immédiatement avant de faire la requête
+        const cached = adminCache.get(session.user.id)
+        const localStorageCache = loadAdminCacheFromStorage(session.user.id)
+        
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          setIsAdmin(cached.isAdmin)
+          setLoading(false)
+        } else if (localStorageCache !== null) {
+          setIsAdmin(localStorageCache)
+          setLoading(false)
+          adminCache.set(session.user.id, { isAdmin: localStorageCache, timestamp: Date.now() })
+        } else {
+          // Pas de cache, faire la requête
+          checkAdminStatus(session.user.id, false)
+        }
       } else {
         setLoading(false)
       }
@@ -100,10 +166,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         // Invalider le cache lors d'un changement d'auth
         adminCache.delete(session.user.id)
-        await checkAdminStatus(session.user.id)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_cache')
+        }
+        await checkAdminStatus(session.user.id, false)
       } else {
         setIsAdmin(false)
         setLoading(false)
+        // Nettoyer le cache
+        adminCache.clear()
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_cache')
+        }
       }
     })
 
@@ -119,6 +193,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (error) throw error
       setUser(null)
       setIsAdmin(false)
+      // Nettoyer les caches
+      adminCache.clear()
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_cache')
+      }
       router.push('/')
       router.refresh()
     } catch (error) {
