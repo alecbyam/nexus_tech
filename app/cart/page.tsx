@@ -10,6 +10,8 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { validateCoupon, useCoupon } from '@/lib/services/coupons'
 import { addPointsFromOrder } from '@/lib/services/loyalty'
 import { formatPrice } from '@/lib/utils/format-price'
+import { createMobileMoneyPayment } from '@/lib/services/mobile-money'
+import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment-method-selector'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clear, total } = useCartStore()
@@ -21,6 +23,8 @@ export default function CartPage() {
   const [couponId, setCouponId] = useState<string | null>(null)
   const [validatingCoupon, setValidatingCoupon] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
+  const [phoneNumber, setPhoneNumber] = useState('')
   const supabase = createSupabaseClient()
 
   const subtotal = total
@@ -75,6 +79,27 @@ export default function CartPage() {
       return
     }
 
+    // Validation de la méthode de paiement
+    if (!paymentMethod) {
+      alert('Veuillez sélectionner une méthode de paiement')
+      return
+    }
+
+    // Validation du numéro de téléphone pour mobile money
+    if (['mpesa', 'orange_money', 'airtel_money'].includes(paymentMethod)) {
+      if (!phoneNumber.trim()) {
+        alert('Veuillez entrer votre numéro de téléphone')
+        return
+      }
+      // Validation basique du format
+      const phoneRegex = /^(\+?243|0)?[0-9]{9}$/
+      const cleanedPhone = phoneNumber.replace(/\s+/g, '')
+      if (!phoneRegex.test(cleanedPhone)) {
+        alert('Format de numéro de téléphone invalide. Exemple: +243 900 000 000')
+        return
+      }
+    }
+
     setLoading(true)
     try {
       // Créer la commande
@@ -86,6 +111,7 @@ export default function CartPage() {
           total_cents: Math.round(finalTotal * 100),
           currency: 'USD',
           delivery_address: deliveryAddress.trim() || null,
+          payment_method: paymentMethod,
           customer_note: deliveryAddress.trim() ? `Adresse de livraison: ${deliveryAddress.trim()}` : null,
         })
         .select()
@@ -110,6 +136,39 @@ export default function CartPage() {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
 
       if (itemsError) throw itemsError
+
+      // Créer le paiement
+      if (paymentMethod !== 'cash') {
+        // Pour mobile money, créer le paiement
+        if (['mpesa', 'orange_money', 'airtel_money'].includes(paymentMethod)) {
+          const paymentResult = await createMobileMoneyPayment({
+            orderId: order.id,
+            userId: user.id,
+            amountCents: Math.round(finalTotal * 100),
+            currency: 'USD',
+            paymentMethod: paymentMethod,
+            phoneNumber: phoneNumber.replace(/\s+/g, ''),
+          })
+
+          if (!paymentResult.success) {
+            // Supprimer la commande si le paiement échoue
+            await supabase.from('orders').delete().eq('id', order.id)
+            alert(paymentResult.error || 'Erreur lors du paiement. Veuillez réessayer.')
+            setLoading(false)
+            return
+          }
+
+          // Afficher le message de confirmation
+          alert(
+            paymentResult.message ||
+              'Paiement initié avec succès. Veuillez confirmer sur votre téléphone.'
+          )
+        }
+        // Pour carte bancaire (à implémenter plus tard)
+      } else {
+        // Pour paiement en espèces, pas besoin de créer de paiement immédiatement
+        // Le paiement sera enregistré à la livraison
+      }
 
       // Ajouter les points de fidélité
       await addPointsFromOrder(user.id, order.id, Math.round(finalTotal * 100))
@@ -238,6 +297,17 @@ export default function CartPage() {
               </div>
             )}
 
+            {/* Méthode de paiement */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <PaymentMethodSelector
+                selectedMethod={paymentMethod}
+                onSelectMethod={setPaymentMethod}
+                phoneNumber={phoneNumber}
+                onPhoneNumberChange={setPhoneNumber}
+                showPhoneInput={true}
+              />
+            </div>
+
             {/* Adresse de livraison */}
             <div className="mb-6 pb-6 border-b border-gray-200">
               <label htmlFor="deliveryAddress" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -275,10 +345,16 @@ export default function CartPage() {
 
             <button
               onClick={handleCheckout}
-              disabled={loading || !user}
+              disabled={loading || !user || !paymentMethod}
               className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
             >
-              {loading ? 'Traitement...' : !user ? 'Se connecter' : 'Passer la commande'}
+              {loading
+                ? 'Traitement...'
+                : !user
+                ? 'Se connecter'
+                : !paymentMethod
+                ? 'Sélectionner un paiement'
+                : 'Passer la commande'}
             </button>
 
             {user && (
