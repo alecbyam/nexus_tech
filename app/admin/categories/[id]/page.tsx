@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import type { Database } from '@/types/database.types'
 
 type Category = Database['public']['Tables']['categories']['Row']
 
-export default function EditCategoryPage() {
+function EditCategoryPageContent() {
   const params = useParams()
   const router = useRouter()
-  const { user, isAdmin, loading: authLoading } = useAuth()
   const supabase = createSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -21,8 +20,9 @@ export default function EditCategoryPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
     name: '',
-    key: '',
     slug: '',
+    description: '',
+    icon: '',
     parent_id: '',
     sort_order: '0',
     is_active: true,
@@ -31,16 +31,9 @@ export default function EditCategoryPage() {
   const categoryId = params.id as string
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadCategory()
     loadCategories()
-  }, [user, isAdmin, authLoading, router, categoryId])
+  }, [categoryId])
 
   async function loadCategory() {
     try {
@@ -55,8 +48,9 @@ export default function EditCategoryPage() {
       setCategory(data)
       setFormData({
         name: data.name,
-        key: data.key || '',
         slug: data.slug || '',
+        description: data.description || '',
+        icon: data.icon || '',
         parent_id: data.parent_id || '',
         sort_order: data.sort_order.toString(),
         is_active: data.is_active,
@@ -132,8 +126,9 @@ export default function EditCategoryPage() {
         .from('categories')
         .update({
           name: formData.name,
-          key: formData.key,
           slug: formData.slug || generateSlug(formData.name),
+          description: formData.description || null,
+          icon: formData.icon || null,
           parent_id: formData.parent_id || null,
           sort_order: sortOrder,
           is_active: formData.is_active,
@@ -151,7 +146,7 @@ export default function EditCategoryPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -225,26 +220,10 @@ export default function EditCategoryPage() {
                 />
               </div>
 
-              {/* Clé */}
-              <div>
-                <label htmlFor="key" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Clé (identifiant unique) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="key"
-                  name="key"
-                  value={formData.key}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all font-mono"
-                />
-              </div>
-
               {/* Slug */}
               <div>
                 <label htmlFor="slug" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Slug (URL)
+                  Slug (URL) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -252,8 +231,48 @@ export default function EditCategoryPage() {
                   name="slug"
                   value={formData.slug}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all font-mono"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Identifiant unique URL-friendly
+                </p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                  placeholder="Description de la catégorie"
+                />
+              </div>
+
+              {/* Icône */}
+              <div>
+                <label htmlFor="icon" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Icône (Emoji)
+                </label>
+                <input
+                  type="text"
+                  id="icon"
+                  name="icon"
+                  value={formData.icon}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-2xl"
+                  placeholder="📱"
+                  maxLength={2}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Emoji pour représenter la catégorie
+                </p>
               </div>
 
               {/* Catégorie parente */}
@@ -333,5 +352,13 @@ export default function EditCategoryPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function EditCategoryPage() {
+  return (
+    <AdminGuard>
+      <EditCategoryPageContent />
+    </AdminGuard>
   )
 }

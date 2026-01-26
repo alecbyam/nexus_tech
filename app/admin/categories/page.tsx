@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,8 +10,7 @@ import type { Database } from '@/types/database.types'
 
 type Category = Database['public']['Tables']['categories']['Row']
 
-export default function CategoriesPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function CategoriesPageContent() {
   const router = useRouter()
   const supabase = createSupabaseClient()
   const [loading, setLoading] = useState(true)
@@ -20,15 +19,8 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadCategories()
-  }, [user, isAdmin, authLoading, router])
+  }, [])
 
   async function loadCategories() {
     try {
@@ -36,7 +28,7 @@ export default function CategoriesPage() {
       // Limiter à 200 catégories pour améliorer les performances
       const { data, error } = await supabase
         .from('categories')
-        .select('*, parent:categories!categories_parent_id_fkey(*)')
+        .select('*, parent:categories!categories_parent_id_fkey(name, slug)')
         .order('sort_order', { ascending: true })
         .order('name', { ascending: true })
         .limit(200) // Limite pour éviter les requêtes trop lourdes
@@ -87,10 +79,10 @@ export default function CategoriesPage() {
 
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cat.key?.toLowerCase().includes(searchQuery.toLowerCase())
+    cat.slug?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -155,9 +147,6 @@ export default function CategoriesPage() {
                     Nom
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Clé
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Slug
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -177,7 +166,7 @@ export default function CategoriesPage() {
               <tbody className="divide-y divide-gray-200">
                 {filteredCategories.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       {searchQuery ? 'Aucune catégorie trouvée' : 'Aucune catégorie. Créez-en une !'}
                     </td>
                   </tr>
@@ -186,12 +175,12 @@ export default function CategoriesPage() {
                     <tr key={category.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-semibold text-gray-900">{category.name}</div>
+                        {category.description && (
+                          <div className="text-xs text-gray-500 mt-1">{category.description}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600 font-mono">{category.key || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{category.slug || '-'}</span>
+                        <span className="text-sm text-gray-600 font-mono">{category.slug || '-'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-600">
@@ -238,5 +227,13 @@ export default function CategoriesPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function CategoriesPage() {
+  return (
+    <AdminGuard>
+      <CategoriesPageContent />
+    </AdminGuard>
   )
 }

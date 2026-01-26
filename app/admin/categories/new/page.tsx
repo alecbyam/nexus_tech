@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
 import type { Database } from '@/types/database.types'
 
 type Category = Database['public']['Tables']['categories']['Row']
 
-export default function NewCategoryPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function NewCategoryPageContent() {
   const router = useRouter()
   const supabase = createSupabaseClient()
   const [loading, setLoading] = useState(true)
@@ -19,23 +18,17 @@ export default function NewCategoryPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
     name: '',
-    key: '',
     slug: '',
+    description: '',
+    icon: '',
     parent_id: '',
     sort_order: '0',
     is_active: true,
   })
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadCategories()
-  }, [user, isAdmin, authLoading, router])
+  }, [])
 
   async function loadCategories() {
     try {
@@ -91,8 +84,8 @@ export default function NewCategoryPage() {
     setError(null)
 
     // Validation
-    if (!formData.name || !formData.key) {
-      setError('Le nom et la clé sont requis')
+    if (!formData.name || !formData.slug) {
+      setError('Le nom et le slug sont requis')
       return
     }
 
@@ -109,8 +102,9 @@ export default function NewCategoryPage() {
         .from('categories')
         .insert({
           name: formData.name,
-          key: formData.key,
           slug: formData.slug || generateSlug(formData.name),
+          description: formData.description || null,
+          icon: formData.icon || null,
           parent_id: formData.parent_id || null,
           sort_order: sortOrder,
           is_active: formData.is_active,
@@ -128,7 +122,7 @@ export default function NewCategoryPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -183,30 +177,10 @@ export default function NewCategoryPage() {
                 />
               </div>
 
-              {/* Clé */}
-              <div>
-                <label htmlFor="key" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Clé (identifiant unique) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="key"
-                  name="key"
-                  value={formData.key}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all font-mono"
-                  placeholder="phones"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Identifiant unique (ex: phones, computers, accessories)
-                </p>
-              </div>
-
               {/* Slug */}
               <div>
                 <label htmlFor="slug" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Slug (URL)
+                  Slug (URL) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -214,11 +188,48 @@ export default function NewCategoryPage() {
                   name="slug"
                   value={formData.slug}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all font-mono"
                   placeholder="telephones"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Généré automatiquement depuis le nom si vide
+                  Identifiant unique URL-friendly (ex: telephones, computers, accessories). Généré automatiquement depuis le nom si vide.
+                </p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                  placeholder="Description de la catégorie"
+                />
+              </div>
+
+              {/* Icône */}
+              <div>
+                <label htmlFor="icon" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Icône (Emoji)
+                </label>
+                <input
+                  type="text"
+                  id="icon"
+                  name="icon"
+                  value={formData.icon}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-2xl"
+                  placeholder="📱"
+                  maxLength={2}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Emoji pour représenter la catégorie (ex: 📱, 💻, 🎧)
                 </p>
               </div>
 
@@ -303,5 +314,13 @@ export default function NewCategoryPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function NewCategoryPage() {
+  return (
+    <AdminGuard>
+      <NewCategoryPageContent />
+    </AdminGuard>
   )
 }
