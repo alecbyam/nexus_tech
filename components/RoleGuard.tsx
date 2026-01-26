@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, type UserRole } from './providers'
 
@@ -19,24 +19,41 @@ export function RoleGuard({
   allowedRoles, 
   redirectTo = '/' 
 }: RoleGuardProps) {
-  const { user, loading, role } = useAuth()
+  const { user, loading, role, refreshRole } = useAuth()
   const router = useRouter()
+  const [hasChecked, setHasChecked] = useState(false)
 
   // Vérifier si l'utilisateur a un rôle autorisé
   const isAuthorized = useMemo(() => {
-    if (loading || !user || !role) return false
+    if (loading || !user) return false
+    if (!role) return false
     return allowedRoles.includes(role)
   }, [loading, user, role, allowedRoles])
 
   const shouldRedirect = useMemo(() => {
-    return !loading && (!user || !role || !allowedRoles.includes(role))
-  }, [loading, user, role, allowedRoles])
+    // Ne rediriger que si le chargement est terminé ET que l'utilisateur n'est pas autorisé
+    return !loading && hasChecked && (!user || !role || !allowedRoles.includes(role))
+  }, [loading, hasChecked, user, role, allowedRoles])
+
+  // Forcer le rechargement du rôle si nécessaire (une seule fois)
+  useEffect(() => {
+    if (!loading && user && !role && !hasChecked) {
+      console.log('[RoleGuard] Role is null, refreshing...')
+      setHasChecked(true)
+      refreshRole().catch(console.error)
+    } else if (!loading && user && role) {
+      setHasChecked(true)
+    } else if (!loading && !user) {
+      setHasChecked(true)
+    }
+  }, [loading, user, role, hasChecked, refreshRole])
 
   useEffect(() => {
     if (shouldRedirect) {
+      console.log('[RoleGuard] Redirecting - user:', user?.id, 'role:', role, 'allowed:', allowedRoles)
       router.push(redirectTo)
     }
-  }, [shouldRedirect, router, redirectTo])
+  }, [shouldRedirect, router, redirectTo, user, role, allowedRoles])
 
   // Afficher un loader pendant le chargement
   if (loading) {

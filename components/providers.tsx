@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean // Conservé pour compatibilité
   role: UserRole | null
   signOut: () => Promise<void>
+  refreshRole: () => Promise<void> // Fonction pour forcer le rechargement du rôle
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   role: null,
   signOut: async () => {},
+  refreshRole: async () => {},
 })
 
 // Cache en mémoire pour le rôle utilisateur (évite les requêtes répétées)
@@ -82,11 +84,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Calculer isAdmin à partir du rôle (pour compatibilité)
   const isAdmin = role === 'admin'
 
-  const checkUserRole = useCallback(async (userId: string, useCache: boolean = true) => {
-    // 1. Vérifier le cache en mémoire d'abord
-    if (useCache) {
+  // Fonction pour forcer le rechargement du rôle (utile pour les pages admin)
+  const refreshRole = useCallback(async () => {
+    if (user?.id) {
+      console.log('[Auth] Force refreshing role for user:', user.id)
+      roleCache.delete(user.id)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('role_cache')
+      }
+      await checkUserRole(user.id, false, true)
+    }
+  }, [user, checkUserRole])
+
+  const checkUserRole = useCallback(async (userId: string, useCache: boolean = true, forceRefresh: boolean = false) => {
+    // Si forceRefresh, ignorer le cache
+    if (!forceRefresh && useCache) {
+      // 1. Vérifier le cache en mémoire d'abord
       const cached = roleCache.get(userId)
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('[Auth] Role from memory cache:', cached.role)
         setRole(cached.role)
         setLoading(false)
         return
@@ -95,6 +111,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // 2. Vérifier le cache localStorage
       const localStorageCache = loadRoleCacheFromStorage(userId)
       if (localStorageCache !== null) {
+        console.log('[Auth] Role from localStorage cache:', localStorageCache)
         setRole(localStorageCache)
         setLoading(false)
         // Mettre à jour le cache en mémoire
@@ -104,6 +121,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      console.log('[Auth] Fetching role from database for user:', userId)
+      setLoading(true)
+      
       // 3. Requête optimisée - récupérer le rôle
       const { data, error } = await supabase
         .from('profiles')
@@ -112,13 +132,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
         .maybeSingle()
 
       if (error) {
-        console.error('Error checking user role:', error)
+        console.error('[Auth] Error checking user role:', error)
+        // En cas d'erreur, essayer de récupérer depuis le cache même expiré
+        const expiredCache = roleCache.get(userId)
+        if (expiredCache) {
+          console.log('[Auth] Using expired cache due to error:', expiredCache.role)
+          setRole(expiredCache.role)
+          setLoading(false)
+          return
+        }
         setRole('client') // Rôle par défaut en cas d'erreur
         const cacheValue = { role: 'client' as UserRole, timestamp: Date.now() }
         roleCache.set(userId, cacheValue)
         saveRoleCacheToStorage(userId, 'client')
       } else {
         const userRole = (data?.role as UserRole) || 'client'
+        console.log('[Auth] Role fetched from database:', userRole)
         setRole(userRole)
         // Mettre en cache (mémoire + localStorage)
         const cacheValue = { role: userRole, timestamp: Date.now() }
@@ -126,7 +155,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
         saveRoleCacheToStorage(userId, userRole)
       }
     } catch (error) {
-      console.error('Error checking user role:', error)
+      console.error('[Auth] Exception checking user role:', error)
+      // En cas d'exception, essayer le cache expiré
+      const expiredCache = roleCache.get(userId)
+      if (expiredCache) {
+        console.log('[Auth] Using expired cache due to exception:', expiredCache.role)
+        setRole(expiredCache.role)
+        setLoading(false)
+        return
+      }
       setRole('client')
     } finally {
       setLoading(false)
@@ -148,21 +185,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       setUser(session?.user ?? null)
       if (session?.user) {
-        // Vérifier le cache immédiatement avant de faire la requête
-        const cached = roleCache.get(session.user.id)
-        const localStorageCache = loadRoleCacheFromStorage(session.user.id)
-        
-        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-          setRole(cached.role)
-          setLoading(false)
-        } else if (localStorageCache !== null) {
-          setRole(localStorageCache)
-          setLoading(false)
-          roleCache.set(session.user.id, { role: localStorageCache, timestamp: Date.now() })
-        } else {
-          // Pas de cache, faire la requête
-          checkUserRole(session.user.id, false)
-        }
+        // Toujours vérifier le rôle, même avec le cache
+        // Le cache sera utilisé dans checkUserRole si disponible
+        checkUserRole(session.user.id, true, false)
       } else {
         setRole(null)
         setLoading(false)
@@ -177,12 +202,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       setUser(session?.user ?? null)
       if (session?.user) {
-        // Invalider le cache lors d'un changement d'auth
+        // Forcer le rechargement du rôle lors d'un changement d'auth
+        // Invalider le cache pour forcer une requête fraîche
         roleCache.delete(session.user.id)
         if (typeof window !== 'undefined') {
           localStorage.removeItem('role_cache')
         }
-        await checkUserRole(session.user.id, false)
+        await checkUserRole(session.user.id, false, true)
       } else {
         setRole(null)
         setLoading(false)
@@ -198,7 +224,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, checkAdminStatus])
+  }, [supabase, checkUserRole])
 
   async function signOut() {
     try {
@@ -220,7 +246,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin: role === 'admin', role, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin: role === 'admin', role, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   )
