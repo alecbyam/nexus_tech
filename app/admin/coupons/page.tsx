@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Database } from '@/types/database.types'
 
 type Coupon = Database['public']['Tables']['coupons']['Row']
 
-export default function AdminCouponsPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
-  const router = useRouter()
+function AdminCouponsPageContent() {
   const supabase = createSupabaseClient()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,15 +30,8 @@ export default function AdminCouponsPage() {
   })
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadCoupons()
-  }, [user, isAdmin, authLoading, router])
+  }, [])
 
   async function loadCoupons() {
     try {
@@ -383,5 +373,13 @@ export default function AdminCouponsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminCouponsPage() {
+  return (
+    <AdminGuard>
+      <AdminCouponsPageContent />
+    </AdminGuard>
   )
 }

@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Database } from '@/types/database.types'
@@ -34,9 +33,7 @@ interface UserInterest {
   lastActivity: string | null
 }
 
-export default function AdminInterestsPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
-  const router = useRouter()
+function AdminInterestsPageContent() {
   const [loading, setLoading] = useState(true)
   const [usersInterests, setUsersInterests] = useState<UserInterest[]>([])
   const [recentViews, setRecentViews] = useState<ProductView[]>([])

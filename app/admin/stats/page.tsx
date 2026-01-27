@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
-import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/utils/format-price'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -20,9 +19,7 @@ export interface AdminStats {
   averageOrderValue: number
 }
 
-export default function AdminStatsPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
-  const router = useRouter()
+function AdminStatsPageContent() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [salesData, setSalesData] = useState<any[]>([])
@@ -31,15 +28,8 @@ export default function AdminStatsPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadStats()
-  }, [user, isAdmin, authLoading, router, period])
+  }, [period])
 
   async function loadStats() {
     try {
