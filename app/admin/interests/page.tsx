@@ -143,17 +143,10 @@ function AdminInterestsPageContent() {
   }, [activeTab])
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadData()
-  }, [user, isAdmin, authLoading, router, loadData])
+  }, [loadData, activeTab])
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />

@@ -144,7 +144,7 @@ function AdminStatsPageContent() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
