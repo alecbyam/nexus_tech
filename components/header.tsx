@@ -38,7 +38,8 @@ export const Header = memo(function Header() {
                 className="object-contain"
                 priority
                 onError={(e) => {
-                  // Fallback si l'image n'existe pas encore
+                  // Fallback si l'image n'existe pas encore (uniquement côté client)
+                  if (typeof window === 'undefined') return
                   const target = e.currentTarget as HTMLImageElement
                   target.style.display = 'none'
                   const parent = target.parentElement

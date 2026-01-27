@@ -84,18 +84,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Calculer isAdmin à partir du rôle (pour compatibilité)
   const isAdmin = role === 'admin'
 
-  // Fonction pour forcer le rechargement du rôle (utile pour les pages admin)
-  const refreshRole = useCallback(async () => {
-    if (user?.id) {
-      console.log('[Auth] Force refreshing role for user:', user.id)
-      roleCache.delete(user.id)
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('role_cache')
-      }
-      await checkUserRole(user.id, false, true)
-    }
-  }, [user, checkUserRole])
-
+  // Fonction pour vérifier le rôle utilisateur (définie en premier pour éviter les problèmes d'ordre)
   const checkUserRole = useCallback(async (userId: string, useCache: boolean = true, forceRefresh: boolean = false, retryCount: number = 0) => {
     const MAX_RETRIES = 2
     
