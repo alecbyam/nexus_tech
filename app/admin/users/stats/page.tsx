@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import type { Database } from '@/types/database.types'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { AdminGuard } from '@/components/AdminGuard'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -18,8 +19,7 @@ interface UserStats {
   recent: number
 }
 
-export default function UserStatsPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function UserStatsPageContent() {
   const router = useRouter()
   const [stats, setStats] = useState<UserStats>({
     total: 0,
@@ -32,15 +32,8 @@ export default function UserStatsPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadStats()
-  }, [user, isAdmin, authLoading, router])
+  }, [])
 
   async function loadStats() {
     try {
@@ -77,7 +70,7 @@ export default function UserStatsPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -182,5 +175,13 @@ export default function UserStatsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function UserStatsPage() {
+  return (
+    <AdminGuard>
+      <UserStatsPageContent />
+    </AdminGuard>
   )
 }
