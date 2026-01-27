@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation'
 import { ProductDetail } from '@/components/product-detail'
 import { Header } from '@/components/header'
 
+// Force dynamic rendering (Header uses client components)
+export const dynamic = 'force-dynamic'
+
 export default async function ProductPage({
   params,
 }: {

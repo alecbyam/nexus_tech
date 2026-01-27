@@ -78,7 +78,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<UserRole | null>(null)
-  const supabase = useMemo(() => createSupabaseClient(), [])
+  // Créer le client Supabase uniquement côté client
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') {
+      // Retourner null côté serveur - sera créé côté client
+      return null as any
+    }
+    return createSupabaseClient()
+  }, [])
   const router = useRouter()
 
   // Calculer isAdmin à partir du rôle (pour compatibilité)
@@ -224,6 +231,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [user, checkUserRole])
 
   useEffect(() => {
+    // Ne rien faire si supabase n'est pas disponible (côté serveur)
+    if (!supabase) return
+    
     let mounted = true
 
     // Get initial session (plus rapide avec cache)
@@ -278,6 +288,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe()
     }
   }, [supabase, checkUserRole])
+
+  // Si supabase n'est pas disponible (côté serveur), ne rien rendre
+  if (!supabase) {
+    return <>{children}</>
+  }
 
   async function signOut() {
     try {
