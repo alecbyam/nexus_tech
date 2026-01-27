@@ -211,6 +211,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [supabase])
 
+  // Fonction pour forcer le rechargement du rôle (définie après checkUserRole)
+  const refreshRole = useCallback(async () => {
+    if (user?.id) {
+      console.log('[Auth] Force refreshing role for user:', user.id)
+      roleCache.delete(user.id)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('role_cache')
+      }
+      await checkUserRole(user.id, false, true)
+    }
+  }, [user, checkUserRole])
+
   useEffect(() => {
     let mounted = true
 
