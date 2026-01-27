@@ -397,3 +397,11 @@ function AdminInterestsPageContent() {
     </div>
   )
 }
+
+export default function AdminInterestsPage() {
+  return (
+    <AdminGuard>
+      <AdminInterestsPageContent />
+    </AdminGuard>
+  )
+}

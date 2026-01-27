@@ -345,3 +345,11 @@ function AdminStatsPageContent() {
     </div>
   )
 }
+
+export default function AdminStatsPage() {
+  return (
+    <AdminGuard>
+      <AdminStatsPageContent />
+    </AdminGuard>
+  )
+}
