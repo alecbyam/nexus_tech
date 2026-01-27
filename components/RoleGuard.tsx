@@ -35,12 +35,23 @@ export function RoleGuard({
     return !loading && hasChecked && (!user || !role || !allowedRoles.includes(role))
   }, [loading, hasChecked, user, role, allowedRoles])
 
-  // Forcer le rechargement du rôle si nécessaire (une seule fois)
+  // Forcer le rechargement du rôle si nécessaire (avec retry)
   useEffect(() => {
     if (!loading && user && !role && !hasChecked) {
       console.log('[RoleGuard] Role is null, refreshing...')
       setHasChecked(true)
-      refreshRole().catch(console.error)
+      refreshRole()
+        .then(() => {
+          console.log('[RoleGuard] Role refreshed successfully')
+        })
+        .catch((error) => {
+          console.error('[RoleGuard] Error refreshing role:', error)
+          // Retry après 2 secondes
+          setTimeout(() => {
+            console.log('[RoleGuard] Retrying role refresh...')
+            refreshRole().catch(console.error)
+          }, 2000)
+        })
     } else if (!loading && user && role) {
       setHasChecked(true)
     } else if (!loading && !user) {

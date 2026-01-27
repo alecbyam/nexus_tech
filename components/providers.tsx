@@ -96,7 +96,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [user, checkUserRole])
 
-  const checkUserRole = useCallback(async (userId: string, useCache: boolean = true, forceRefresh: boolean = false) => {
+  const checkUserRole = useCallback(async (userId: string, useCache: boolean = true, forceRefresh: boolean = false, retryCount: number = 0) => {
+    const MAX_RETRIES = 2
+    
     // Si forceRefresh, ignorer le cache
     if (!forceRefresh && useCache) {
       // 1. Vérifier le cache en mémoire d'abord
@@ -121,27 +123,58 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('[Auth] Fetching role from database for user:', userId)
+      console.log('[Auth] Fetching role from database for user:', userId, `(attempt ${retryCount + 1})`)
       setLoading(true)
       
-      // 3. Requête optimisée - récupérer le rôle
-      const { data, error } = await supabase
+      // 3. Requête optimisée - récupérer le rôle avec timeout
+      const rolePromise = supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
         .maybeSingle()
 
+      // Timeout de 5 secondes
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      )
+
+      const { data, error } = await Promise.race([
+        rolePromise,
+        timeoutPromise
+      ]) as any
+
       if (error) {
         console.error('[Auth] Error checking user role:', error)
-        // En cas d'erreur, essayer de récupérer depuis le cache même expiré
+        
+        // Retry si on n'a pas atteint le max
+        if (retryCount < MAX_RETRIES) {
+          console.log('[Auth] Retrying role fetch...')
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))) // Backoff exponentiel
+          return checkUserRole(userId, false, false, retryCount + 1)
+        }
+        
+        // En cas d'erreur après retry, essayer de récupérer depuis le cache même expiré
         const expiredCache = roleCache.get(userId)
+        const localStorageCache = loadRoleCacheFromStorage(userId)
+        
         if (expiredCache) {
-          console.log('[Auth] Using expired cache due to error:', expiredCache.role)
+          console.log('[Auth] Using expired memory cache due to error:', expiredCache.role)
           setRole(expiredCache.role)
           setLoading(false)
           return
         }
-        setRole('client') // Rôle par défaut en cas d'erreur
+        
+        if (localStorageCache) {
+          console.log('[Auth] Using expired localStorage cache due to error:', localStorageCache)
+          setRole(localStorageCache)
+          setLoading(false)
+          roleCache.set(userId, { role: localStorageCache, timestamp: Date.now() })
+          return
+        }
+        
+        // Dernier recours : rôle par défaut
+        console.warn('[Auth] No cache available, defaulting to client')
+        setRole('client')
         const cacheValue = { role: 'client' as UserRole, timestamp: Date.now() }
         roleCache.set(userId, cacheValue)
         saveRoleCacheToStorage(userId, 'client')
@@ -154,16 +187,35 @@ export function Providers({ children }: { children: React.ReactNode }) {
         roleCache.set(userId, cacheValue)
         saveRoleCacheToStorage(userId, userRole)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Auth] Exception checking user role:', error)
+      
+      // Retry si timeout et qu'on n'a pas atteint le max
+      if (error.message === 'Timeout' && retryCount < MAX_RETRIES) {
+        console.log('[Auth] Timeout, retrying...')
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return checkUserRole(userId, false, false, retryCount + 1)
+      }
+      
       // En cas d'exception, essayer le cache expiré
       const expiredCache = roleCache.get(userId)
+      const localStorageCache = loadRoleCacheFromStorage(userId)
+      
       if (expiredCache) {
-        console.log('[Auth] Using expired cache due to exception:', expiredCache.role)
+        console.log('[Auth] Using expired memory cache due to exception:', expiredCache.role)
         setRole(expiredCache.role)
         setLoading(false)
         return
       }
+      
+      if (localStorageCache) {
+        console.log('[Auth] Using expired localStorage cache due to exception:', localStorageCache)
+        setRole(localStorageCache)
+        setLoading(false)
+        roleCache.set(userId, { role: localStorageCache, timestamp: Date.now() })
+        return
+      }
+      
       setRole('client')
     } finally {
       setLoading(false)

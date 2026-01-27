@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -32,8 +32,7 @@ interface OrderStats {
   totalRevenue: number
 }
 
-export default function AdminOrdersPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function AdminOrdersPageContent() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/providers'
+import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
 import { useRouter } from 'next/navigation'
 import type { Database } from '@/types/database.types'
@@ -11,8 +11,7 @@ import { fr } from 'date-fns/locale'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
-export default function AdminUsersPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+function AdminUsersPageContent() {
   const router = useRouter()
   const [users, setUsers] = useState<Profile[]>([])
   const [filteredUsers, setFilteredUsers] = useState<Profile[]>([])
@@ -28,15 +27,8 @@ export default function AdminUsersPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user || !isAdmin) {
-      router.push('/')
-      return
-    }
-
     loadUsers()
-  }, [user, isAdmin, authLoading, router])
+  }, [])
 
   async function loadUsers() {
     try {
@@ -303,5 +295,13 @@ export default function AdminUsersPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminUsersPage() {
+  return (
+    <AdminGuard>
+      <AdminUsersPageContent />
+    </AdminGuard>
   )
 }
