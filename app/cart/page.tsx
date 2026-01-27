@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering (uses createSupabaseClient)
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { useCartStore } from '@/store/cart-store'

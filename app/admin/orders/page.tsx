@@ -1,9 +1,13 @@
 'use client'
 
+// Force dynamic rendering (uses createSupabaseClient)
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
+import { useAuth } from '@/components/providers'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
@@ -34,6 +38,7 @@ interface OrderStats {
 
 function AdminOrdersPageContent() {
   const router = useRouter()
+  const { user, isAdmin, loading: authLoading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -367,5 +372,13 @@ function AdminOrdersPageContent() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <AdminGuard>
+      <AdminOrdersPageContent />
+    </AdminGuard>
   )
 }

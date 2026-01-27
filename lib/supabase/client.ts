@@ -9,7 +9,19 @@ import type { Database } from '@/types/database.types'
 export function createSupabaseClient() {
   // Vérifier que nous sommes côté client
   if (typeof window === 'undefined') {
-    throw new Error('createSupabaseClient can only be used in client components. Use createServerClient for server components.')
+    // Retourner un client mock côté serveur pour éviter les erreurs de pré-rendu
+    // Ce client ne sera jamais utilisé car les composants client ne s'exécutent pas côté serveur
+    // Mais cela permet à Next.js de pré-rendre sans erreur
+    return createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    )
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

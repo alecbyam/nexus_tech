@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering (uses createSupabaseClient)
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers'
 import { Header } from '@/components/header'

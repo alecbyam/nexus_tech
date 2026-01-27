@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering (uses createSupabaseClient)
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { AdminGuard } from '@/components/AdminGuard'
 import { Header } from '@/components/header'
