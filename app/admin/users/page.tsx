@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import type { Database } from '@/types/database.types'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import type { UserRole } from '@/components/providers'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -17,6 +18,23 @@ function AdminUsersPageContent() {
   const [filteredUsers, setFilteredUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null)
+  const [newUser, setNewUser] = useState<{
+    email: string
+    password: string
+    full_name: string
+    phone: string
+    role: UserRole
+  }>({
+    email: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    role: 'client',
+  })
   const [stats, setStats] = useState({
     total: 0,
     admins: 0,
@@ -120,7 +138,52 @@ function AdminUsersPageContent() {
     }
   }
 
-  if (authLoading || loading) {
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault()
+    setCreateError(null)
+    setCreateSuccess(null)
+
+    const email = newUser.email.trim().toLowerCase()
+    const password = newUser.password.trim()
+    if (!email || !password) {
+      setCreateError('Email et mot de passe sont requis')
+      return
+    }
+    if (password.length < 6) {
+      setCreateError('Mot de passe trop court (min 6 caractères)')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const res = await fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: newUser.full_name.trim() || undefined,
+          phone: newUser.phone.trim() || undefined,
+          role: newUser.role,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json?.error || 'Erreur lors de la création')
+      }
+
+      setCreateSuccess(`Utilisateur créé: ${json.email} (${json.role})`)
+      setShowCreateForm(false)
+      setNewUser({ email: '', password: '', full_name: '', phone: '', role: 'client' })
+      await loadUsers()
+    } catch (err: any) {
+      setCreateError(err?.message || 'Erreur lors de la création')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -147,13 +210,122 @@ function AdminUsersPageContent() {
                 {stats.total} {stats.total === 1 ? 'utilisateur' : 'utilisateurs'} au total
               </p>
             </div>
-            <a
-              href="/admin/users/stats"
-              className="px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all font-bold shadow-lg hover:shadow-xl"
-            >
-              📊 Statistiques
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setCreateError(null)
+                  setCreateSuccess(null)
+                  setShowCreateForm((v) => !v)
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all font-bold shadow-lg hover:shadow-xl"
+              >
+                + Créer un utilisateur
+              </button>
+              <a
+                href="/admin/users/stats"
+                className="px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all font-bold shadow-lg hover:shadow-xl"
+              >
+                📊 Statistiques
+              </a>
+            </div>
           </div>
+
+          {showCreateForm && (
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Créer un utilisateur</h2>
+
+              {createError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-semibold">
+                  {createError}
+                </div>
+              )}
+              {createSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-semibold">
+                  {createSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateUser} className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser((p) => ({ ...p, email: e.target.value }))}
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="client@onatech.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mot de passe *</label>
+                  <input
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser((p) => ({ ...p, password: e.target.value }))}
+                    required
+                    minLength={6}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Min 6 caractères"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nom complet</label>
+                  <input
+                    type="text"
+                    value={newUser.full_name}
+                    onChange={(e) => setNewUser((p) => ({ ...p, full_name: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Nom Prénom"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Téléphone</label>
+                  <input
+                    type="text"
+                    value={newUser.phone}
+                    onChange={(e) => setNewUser((p) => ({ ...p, phone: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="+243..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Rôle</label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser((p) => ({ ...p, role: e.target.value as UserRole }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="client">Client</option>
+                    <option value="staff">Staff / Vendeur</option>
+                    <option value="tech">Tech</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end gap-3">
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all font-bold disabled:opacity-50"
+                  >
+                    {creating ? 'Création...' : 'Créer'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all font-bold"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Statistiques */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
