@@ -17,10 +17,35 @@ export const metadata: Metadata = {
   description: 'Boutique tech en République Démocratique du Congo: smartphones, ordinateurs, accessoires, services',
   keywords: 'smartphones, ordinateurs, accessoires, tech, e-commerce',
   robots: 'index, follow',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
   openGraph: {
     title: 'ONATECH - Boutique Tech en ligne',
     description: 'Boutique tech: smartphones, ordinateurs, accessoires, services',
     type: 'website',
+    images: [
+      {
+        url: '/logo-onatech.png',
+        width: 1200,
+        height: 630,
+        alt: 'ONATECH Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ONATECH - Boutique Tech RDC',
+    description: 'Boutique tech en République Démocratique du Congo',
+    images: ['/logo-onatech.png'],
   },
 }
 
