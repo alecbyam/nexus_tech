@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description: 'Boutique tech en République Démocratique du Congo: smartphones, ordinateurs, accessoires, services',
   keywords: 'smartphones, ordinateurs, accessoires, tech, e-commerce',
   robots: 'index, follow',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

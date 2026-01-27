@@ -13,7 +13,7 @@ type Product = Database['public']['Tables']['products']['Row'] & {
   }>
   categories: {
     name: string
-    key: string
+    slug: string
   }
 }
 
