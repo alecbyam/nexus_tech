@@ -3,6 +3,9 @@ import { getCategoryBySlug } from '@/lib/services/categories'
 import { ProductGrid } from '@/components/product-grid'
 import { SearchBar } from '@/components/search-bar'
 import { Header } from '@/components/header'
+import { ProductGridSkeleton } from '@/components/skeleton-loader'
+import { PageHeader } from '@/components/page-header'
+import { Suspense } from 'react'
 import type { Database } from '@/types/database.types'
 
 type Product = Database['public']['Tables']['products']['Row'] & {
@@ -56,19 +59,30 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const { data: products } = await query.order('created_at', { ascending: false })
 
+  const breadcrumbs = categorySlug
+    ? [
+        { label: 'Catalogue', href: '/catalog' },
+        { label: categorySlug },
+      ]
+    : [{ label: 'Catalogue' }]
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-10 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
-            Catalogue
-          </h1>
-          <p className="text-gray-600 mb-6 text-lg">
-            Découvrez notre sélection de produits tech
-          </p>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
+        <PageHeader
+          title="Catalogue"
+          subtitle="Découvrez notre sélection de produits tech"
+          breadcrumbs={breadcrumbs}
+        />
+        
+        <div className="mb-4 sm:mb-6 md:mb-8">
           <SearchBar initialSearch={search} initialCategory={categorySlug} />
-        </div>        <ProductGrid products={(products as Product[]) || []} />
+        </div>
+        
+        <Suspense fallback={<ProductGridSkeleton />}>
+          <ProductGrid products={(products as Product[]) || []} />
+        </Suspense>
       </main>
     </div>
   )

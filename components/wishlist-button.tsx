@@ -69,17 +69,17 @@ export function WishlistButton({ productId, className = '' }: WishlistButtonProp
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`p-2 rounded-lg transition-all ${
+      className={`p-1.5 rounded-lg transition-all shadow-sm ${
         isWishlisted
           ? 'bg-red-50 text-red-500 hover:bg-red-100'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          : 'bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white hover:text-red-600'
       } ${className}`}
       title={isWishlisted ? 'Retirer des favoris' : 'Ajouter aux favoris'}
     >
       {isWishlisted ? (
-        <HeartIconSolid className="w-6 h-6" />
+        <HeartIconSolid className="w-4 h-4" />
       ) : (
-        <HeartIcon className="w-6 h-6" />
+        <HeartIcon className="w-4 h-4" />
       )}
     </button>
   )

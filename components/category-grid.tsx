@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Category } from '@/lib/categories'
+import { CategoryImage } from './category-image'
 
 interface CategoryGridProps {
   categories: Category[]
@@ -47,7 +47,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
       {mainCategories.map((category, index) => {
         const categorySlug = category.slug || category.key || ''
         const imagePath = categoryImages[categorySlug.toLowerCase()]
@@ -62,50 +62,32 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
             aria-label={`Voir les produits de la catégorie ${category.name}`}
           >
             {/* Image de fond ou gradient */}
-            <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-              {imagePath ? (
-                <Image
-                  src={imagePath}
-                  alt={category.name}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                  onError={(e) => {
-                    // Fallback vers gradient si l'image n'existe pas
-                    const target = e.currentTarget as HTMLImageElement
-                    target.style.display = 'none'
-                    const parent = target.parentElement
-                    if (parent) {
-                      parent.className = `relative h-48 w-full overflow-hidden bg-gradient-to-br ${gradient}`
-                    }
-                  }}
-                />
-              ) : (
-                <div className={`h-full w-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                  <span className="text-6xl opacity-80 transform group-hover:scale-110 transition-transform duration-300">
-                    {category.icon || '📦'}
-                  </span>
-                </div>
-              )}
+            <div className="relative h-32 sm:h-40 md:h-48 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 group">
+              <CategoryImage
+                imagePath={imagePath}
+                categoryName={category.name}
+                gradient={gradient}
+                icon={category.icon}
+              />
               
               {/* Overlay au survol */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
               
-              {/* Badge "Nouveau" ou icône */}
+              {/* Badge icône si pas d'image */}
               {category.icon && !imagePath && (
-                <div className="absolute top-3 right-3 text-3xl opacity-90 transform group-hover:scale-110 transition-transform duration-300">
+                <div className="absolute top-3 right-3 text-3xl opacity-90 transform group-hover:scale-110 transition-transform duration-300 z-10">
                   {category.icon}
                 </div>
               )}
             </div>
 
             {/* Contenu de la carte */}
-            <div className="p-6 bg-white">
-              <h3 className="font-black text-gray-900 text-lg mb-2 group-hover:text-primary-600 transition-colors duration-200 line-clamp-2">
+            <div className="p-3 sm:p-4 md:p-6 bg-white">
+              <h3 className="font-black text-gray-900 text-sm sm:text-base md:text-lg mb-1 sm:mb-2 group-hover:text-primary-600 transition-colors duration-200 line-clamp-2">
                 {category.name}
               </h3>
               {category.description && (
-                <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mb-2 sm:mb-3 hidden sm:block">
                   {category.description}
                 </p>
               )}
@@ -114,9 +96,9 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
               <div className="h-1 w-0 group-hover:w-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 rounded-full" aria-hidden="true" />
               
               {/* Texte "Explorer" au survol */}
-              <div className="mt-4 text-sm font-semibold text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2">
+              <div className="mt-2 sm:mt-4 text-xs sm:text-sm font-semibold text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 hidden sm:flex">
                 Explorer
-                <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>

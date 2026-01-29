@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FormField, Input } from './form-field'
 
 export type PaymentMethod = 'mpesa' | 'orange_money' | 'airtel_money' | 'card' | 'cash'
 
@@ -150,30 +151,30 @@ export function PaymentMethodSelector({
       {showPhoneInput &&
         selectedMethod &&
         ['mpesa', 'orange_money', 'airtel_money'].includes(selectedMethod) && (
-          <div className="mt-4">
-            <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
-              Numéro de téléphone {selectedMethod === 'mpesa' ? 'M-Pesa' : selectedMethod === 'orange_money' ? 'Orange Money' : 'Airtel Money'}{' '}
-              <span className="text-red-500">*</span>
-            </label>
-            <input
+          <FormField
+            label={`Numéro de téléphone ${
+              selectedMethod === 'mpesa' 
+                ? 'M-Pesa' 
+                : selectedMethod === 'orange_money' 
+                ? 'Orange Money' 
+                : 'Airtel Money'
+            }`}
+            htmlFor="phoneNumber"
+            required
+            error={phoneError || undefined}
+            hint="Format: +243 900 000 000 ou 0900 000 000 (9 chiffres après le préfixe)"
+            className="mt-4"
+          >
+            <Input
               type="tel"
               id="phoneNumber"
               value={phoneNumber}
               onChange={handlePhoneChange}
               placeholder="+243 900 000 000 ou 0900 000 000"
-              className={`
-                w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all
-                ${phoneError ? 'border-red-300 bg-red-50' : 'border-gray-200'}
-              `}
+              error={!!phoneError}
               required
             />
-            {phoneError && (
-              <p className="text-sm text-red-600 mt-1">{phoneError}</p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Format: +243 900 000 000 ou 0900 000 000 (9 chiffres après le préfixe)
-            </p>
-          </div>
+          </FormField>
         )}
 
       {/* Message pour paiement en espèces */}

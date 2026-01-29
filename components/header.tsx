@@ -6,6 +6,7 @@ import { useAuth } from './providers'
 import { ShoppingCartIcon, UserIcon, Bars3Icon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cart-store'
 import { useState, memo } from 'react'
+import { MobileMenu } from './mobile-menu'
 
 export const Header = memo(function Header() {
   const { user, loading, isAdmin, signOut } = useAuth()
@@ -26,10 +27,10 @@ export const Header = memo(function Header() {
 
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-100">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-12 h-12 flex items-center justify-center">
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
               <Image
                 src="/logo-onatech.png"
                 alt="ONATECH Logo"
@@ -37,6 +38,7 @@ export const Header = memo(function Header() {
                 height={48}
                 className="object-contain"
                 priority
+                sizes="(max-width: 640px) 40px, 48px"
                 onError={(e) => {
                   // Fallback si l'image n'existe pas encore (uniquement côté client)
                   if (typeof window === 'undefined') return
@@ -52,7 +54,7 @@ export const Header = memo(function Header() {
                 }}
               />
             </div>
-            <span className="text-3xl font-black gradient-text group-hover:scale-105 transition-transform">
+            <span className="text-xl sm:text-2xl md:text-3xl font-black gradient-text group-hover:scale-105 transition-transform">
               ONATECH
             </span>
           </Link>
@@ -87,12 +89,20 @@ export const Header = memo(function Header() {
                   Mes commandes
                 </Link>
                 {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="text-gray-700 hover:text-primary-500 font-medium transition-all duration-200 hover:scale-105"
-                  >
-                    Admin
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      className="text-gray-700 hover:text-primary-500 font-medium transition-all duration-200 hover:scale-105"
+                    >
+                      Admin
+                    </Link>
+                    <Link
+                      href="/admin/notifications"
+                      className="relative text-gray-700 hover:text-primary-500 font-medium transition-all duration-200 hover:scale-105"
+                    >
+                      🔔 Notifications
+                    </Link>
+                  </>
                 )}
               </>
             )}
@@ -112,10 +122,14 @@ export const Header = memo(function Header() {
             <Link
               href="/cart"
               className="relative p-2 text-gray-700 hover:text-primary-500 transition-all duration-200 hover:bg-primary-50 rounded-lg"
+              aria-label={`Panier${itemCount > 0 ? ` avec ${itemCount} article${itemCount > 1 ? 's' : ''}` : ''}`}
             >
               <ShoppingCartIcon className="w-6 h-6" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
+                <span 
+                  className="absolute -top-1 -right-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse"
+                  aria-label={`${itemCount} article${itemCount > 1 ? 's' : ''} dans le panier`}
+                >
                   {itemCount}
                 </span>
               )}
@@ -158,87 +172,16 @@ export const Header = memo(function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-gray-700 hover:text-primary-500 transition-colors"
+            className="md:hidden p-2 text-gray-700 hover:text-primary-500 transition-colors rounded-lg hover:bg-gray-100"
             aria-label="Menu mobile"
+            aria-expanded={mobileMenuOpen}
           >
             <Bars3Icon className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-gray-100 animate-slide-in">
-            <div className="flex flex-col gap-4">
-              <Link
-                href="/catalog"
-                className="text-gray-700 hover:text-primary-500 font-medium py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Catalogue
-              </Link>
-              {user && (
-                <>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-sm font-semibold text-green-700">Connecté</span>
-                  </div>
-                  <Link
-                    href="/orders"
-                    className="text-gray-700 hover:text-primary-500 font-medium py-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Mes commandes
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="text-gray-700 hover:text-primary-500 font-medium py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  )}
-                </>
-              )}
-              <Link
-                href="/cart"
-                className="text-gray-700 hover:text-primary-500 font-medium py-2 flex items-center gap-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Panier {itemCount > 0 && `(${itemCount})`}
-              </Link>
-              {user ? (
-                <>
-                  <Link
-                    href="/profile"
-                    className="text-gray-700 hover:text-primary-500 font-medium py-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Mon profil
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      handleSignOut()
-                    }}
-                    disabled={signingOut}
-                    className="text-left text-red-600 hover:text-red-700 font-medium py-2 disabled:opacity-50"
-                  >
-                    {signingOut ? 'Déconnexion...' : 'Se déconnecter'}
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/auth"
-                  className="bg-primary-500 text-white px-6 py-2.5 rounded-lg text-center font-semibold"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Connexion
-                </Link>
-              )}
-            </div>
-          </nav>
-        )}
+        {/* Mobile Menu */}
+        <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       </div>
     </header>
   )

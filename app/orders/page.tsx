@@ -10,6 +10,9 @@ import { Header } from '@/components/header'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { EmptyOrders } from '@/components/empty-state'
+import { LoadingSpinner } from '@/components/loading-spinner'
+import { PageHeader } from '@/components/page-header'
 
 export default function OrdersPage() {
   const { user } = useAuth()
@@ -53,23 +56,25 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Mes commandes</h1>
+        <PageHeader
+          title="Mes commandes"
+          subtitle="Consultez l'historique de vos commandes"
+          breadcrumbs={[{ label: 'Mes commandes' }]}
+        />
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
+          <LoadingSpinner size="lg" text="Chargement de vos commandes..." />
         ) : orders.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📦</div>
-            <p className="text-gray-500 text-xl mb-6 font-semibold">Aucune commande</p>
-            <Link
-              href="/catalog"
-              className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Découvrir le catalogue
-            </Link>
-          </div>
+          <EmptyOrders
+            action={
+              <Link
+                href="/catalog"
+                className="inline-block bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-3 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Découvrir le catalogue
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-4">
             {orders.map((order, index) => (

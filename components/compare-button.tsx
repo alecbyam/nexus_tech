@@ -40,14 +40,14 @@ export function CompareButton({ productId, className = '' }: CompareButtonProps)
   return (
     <button
       onClick={handleToggle}
-      className={`p-2 rounded-lg transition-all ${
+      className={`p-1.5 rounded-lg transition-all shadow-sm ${
         inCompare
           ? 'bg-primary-50 text-primary-600 hover:bg-primary-100'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          : 'bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white hover:text-primary-600'
       } ${className}`}
       title={inCompare ? 'Retirer de la comparaison' : 'Ajouter à la comparaison'}
     >
-      <Squares2X2Icon className="w-6 h-6" />
+      <Squares2X2Icon className="w-4 h-4" />
     </button>
   )
 }

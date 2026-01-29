@@ -16,11 +16,18 @@ import { formatPrice } from '@/lib/utils/format-price'
 import { createMobileMoneyPayment } from '@/lib/services/mobile-money'
 import { PaymentMethodSelector, type PaymentMethod } from '@/components/payment-method-selector'
 import { openWhatsAppOrder } from '@/lib/utils/whatsapp-order'
+import { useToast } from '@/components/toast'
+import { EmptyCart } from '@/components/empty-state'
+import { PageHeader } from '@/components/page-header'
+import { FormField, Input, Textarea, Select } from '@/components/form-field'
+import { InfoCard } from '@/components/info-card'
+import { QuantitySelector } from '@/components/quantity-selector'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clear, total } = useCartStore()
   const { user } = useAuth()
   const router = useRouter()
+  const toast = useToast()
   const [loading, setLoading] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
@@ -29,7 +36,21 @@ export default function CartPage() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
   const supabase = createSupabaseClient()
+  
+  // Get session ID
+  const getSessionId = () => {
+    if (typeof window === 'undefined') return null
+    let sessionId = localStorage.getItem('session_id')
+    if (!sessionId) {
+      sessionId = crypto.randomUUID()
+      localStorage.setItem('session_id', sessionId)
+    }
+    return sessionId
+  }
+  const [sessionId] = useState<string | null>(() => getSessionId())
 
   const subtotal = total
   const discount = couponDiscount
@@ -58,70 +79,94 @@ export default function CartPage() {
         if (coupon) {
           setCouponId(coupon.id)
         }
-        alert('Code promo appliqué avec succès !')
+        toast.showToast('Code promo appliqué avec succès !', 'success')
       } else {
-        alert(validation.error || 'Code promo invalide')
+        toast.showToast(validation.error || 'Code promo invalide', 'error')
         setCouponCode('')
         setCouponDiscount(0)
         setCouponId(null)
       }
     } catch (error: any) {
-      alert(error.message || 'Erreur lors de la validation du code')
+      toast.showToast(error.message || 'Erreur lors de la validation du code', 'error')
     } finally {
       setValidatingCoupon(false)
     }
   }
 
   const handleCheckout = async () => {
-    if (!user) {
-      router.push('/auth')
-      return
-    }
-
     if (items.length === 0) {
-      alert('Votre panier est vide')
+      toast.showToast('Votre panier est vide', 'warning')
       return
     }
 
     // Validation de la méthode de paiement
     if (!paymentMethod) {
-      alert('Veuillez sélectionner une méthode de paiement')
+      toast.showToast('Veuillez sélectionner une méthode de paiement', 'warning')
       return
+    }
+
+    // Validation des informations client si pas connecté
+    if (!user) {
+      if (!customerName.trim()) {
+        toast.showToast('Veuillez entrer votre nom', 'warning')
+        return
+      }
+      if (!phoneNumber.trim()) {
+        toast.showToast('Veuillez entrer votre numéro de téléphone', 'warning')
+        return
+      }
     }
 
     // Validation du numéro de téléphone pour mobile money
     if (['mpesa', 'orange_money', 'airtel_money'].includes(paymentMethod)) {
-      if (!phoneNumber.trim()) {
-        alert('Veuillez entrer votre numéro de téléphone')
+      const phone = phoneNumber.trim()
+      if (!phone) {
+        toast.showToast('Veuillez entrer votre numéro de téléphone', 'warning')
         return
       }
       // Validation basique du format
       const phoneRegex = /^(\+?243|0)?[0-9]{9}$/
-      const cleanedPhone = phoneNumber.replace(/\s+/g, '')
+      const cleanedPhone = phone.replace(/\s+/g, '')
       if (!phoneRegex.test(cleanedPhone)) {
-        alert('Format de numéro de téléphone invalide. Exemple: +243 900 000 000')
+        toast.showToast('Format de numéro de téléphone invalide. Exemple: +243 900 000 000', 'error')
         return
       }
     }
 
     setLoading(true)
     try {
-      // Créer la commande
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          status: 'pending' as const,
-          total_cents: Math.round(finalTotal * 100),
+      // Créer la commande via l'API
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          totalCents: Math.round(finalTotal * 100),
           currency: 'USD',
-          delivery_address: deliveryAddress.trim() || null,
-          payment_method: paymentMethod,
-          customer_note: deliveryAddress.trim() ? `Adresse de livraison: ${deliveryAddress.trim()}` : null,
-        })
-        .select()
-        .single()
+          deliveryAddress: deliveryAddress.trim() || null,
+          paymentMethod: paymentMethod,
+          customerName: user ? null : customerName.trim() || null,
+          customerEmail: user ? null : customerEmail.trim() || null,
+          customerPhone: user ? null : (phoneNumber.trim() || null),
+          sessionId: sessionId || null,
+          userId: user?.id || null,
+          couponId: couponId || null,
+        }),
+      })
 
-      if (orderError) throw orderError
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erreur lors de la création de la commande')
+      }
+
+      const { order } = await response.json()
 
       // Utiliser le coupon si applicable
       if (couponId && couponDiscount > 0) {
@@ -157,15 +202,16 @@ export default function CartPage() {
           if (!paymentResult.success) {
             // Supprimer la commande si le paiement échoue
             await supabase.from('orders').delete().eq('id', order.id)
-            alert(paymentResult.error || 'Erreur lors du paiement. Veuillez réessayer.')
+            toast.showToast(paymentResult.error || 'Erreur lors du paiement. Veuillez réessayer.', 'error')
             setLoading(false)
             return
           }
 
           // Afficher le message de confirmation
-          alert(
+          toast.showToast(
             paymentResult.message ||
-              'Paiement initié avec succès. Veuillez confirmer sur votre téléphone.'
+              'Paiement initié avec succès. Veuillez confirmer sur votre téléphone.',
+            'success'
           )
         }
         // Pour carte bancaire (à implémenter plus tard)
@@ -183,11 +229,21 @@ export default function CartPage() {
       setCouponDiscount(0)
       setCouponId(null)
       setDeliveryAddress('')
+      setCustomerName('')
+      setCustomerEmail('')
+      setPhoneNumber('')
 
-      router.push(`/orders/${order.id}`)
+      toast.showToast('Commande créée avec succès ! Vous recevrez un email de confirmation.', 'success')
+      
+      // Rediriger vers une page de confirmation
+      if (user) {
+        router.push(`/orders/${order.id}`)
+      } else {
+        router.push(`/order-confirmation?orderId=${order.id}`)
+      }
     } catch (error: any) {
       console.error('Error creating order:', error)
-      alert('Erreur lors de la création de la commande')
+      toast.showToast('Erreur lors de la création de la commande', 'error')
     } finally {
       setLoading(false)
     }
@@ -198,17 +254,16 @@ export default function CartPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🛒</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Votre panier est vide</h1>
-            <p className="text-gray-600 mb-6">Ajoutez des produits pour commencer</p>
-            <button
-              onClick={() => router.push('/catalog')}
-              className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all font-bold"
-            >
-              Découvrir le catalogue
-            </button>
-          </div>
+          <EmptyCart
+            action={
+              <button
+                onClick={() => router.push('/catalog')}
+                className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Découvrir le catalogue
+              </button>
+            }
+          />
         </main>
       </div>
     )
@@ -217,80 +272,83 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-white">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2 animate-fade-in">
-          🛒 Panier
-        </h1>
-        <p className="text-gray-600 mb-8">Vérifiez vos articles avant de commander</p>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
+        <PageHeader
+          title="🛒 Panier"
+          subtitle="Vérifiez vos articles avant de commander"
+          breadcrumbs={[{ label: 'Panier' }]}
+        />
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {/* Liste des articles */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="md:col-span-2 space-y-3 sm:space-y-4">
             {items.map((item) => (
               <div
                 key={item.productId}
-                className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex items-center gap-6 hover:shadow-xl transition-all duration-300 card-hover"
+                className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 card-hover"
               >
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-24 h-24 object-cover rounded-lg"
-                />
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">{item.name}</h3>
-                  <p className="text-primary-600 font-black text-lg">
-                    {formatPrice(Math.round(item.price * 100), 'USD')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
+                    loading="lazy"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 line-clamp-2 text-sm sm:text-base">{item.name}</h3>
+                    <p className="text-primary-600 font-black text-base sm:text-lg mb-2 sm:mb-3">
+                      {formatPrice(Math.round(item.price * 100), 'USD')}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      Sous-total: {formatPrice(Math.round(item.price * item.quantity * 100), 'USD')}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                    <QuantitySelector
+                      value={item.quantity}
+                      onChange={(newQuantity) => updateQuantity(item.productId, newQuantity)}
+                      min={1}
+                      size="md"
+                    />
                     <button
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      className="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300 transition-colors"
+                      onClick={() => removeItem(item.productId)}
+                      className="text-red-600 hover:text-red-700 font-semibold text-sm px-3 py-2 hover:bg-red-50 rounded-lg transition-colors"
+                      aria-label={`Supprimer ${item.name} du panier`}
                     >
-                      -
-                    </button>
-                    <span className="w-12 text-center font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      className="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300 transition-colors"
-                    >
-                      +
+                      Supprimer
                     </button>
                   </div>
-                  <button
-                    onClick={() => removeItem(item.productId)}
-                    className="text-red-600 hover:text-red-700 font-semibold"
-                  >
-                    Supprimer
-                  </button>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Résumé */}
-          <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-100 h-fit sticky top-24 backdrop-blur-sm">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Résumé</h2>
+          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 border border-gray-100 h-fit md:sticky md:top-24 backdrop-blur-sm">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
+              <span>📋</span>
+              Résumé de la commande
+            </h2>
 
             {/* Code promo */}
             {user && (
-              <div className="mb-6 pb-6 border-b border-gray-200">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Code promo
-                </label>
+              <FormField
+                label="Code promo"
+                hint="Entrez un code promo pour bénéficier d'une réduction"
+                className="mb-6 pb-6 border-b border-gray-200"
+              >
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="ENTRER CODE"
-                    className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="flex-1"
                   />
                   <button
                     onClick={handleApplyCoupon}
                     disabled={validatingCoupon || !couponCode.trim()}
-                    className="bg-primary-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50"
+                    className="bg-primary-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     {validatingCoupon ? '...' : 'Appliquer'}
                   </button>
@@ -301,7 +359,7 @@ export default function CartPage() {
                 >
                   Voir tous les codes promo
                 </Link>
-              </div>
+              </FormField>
             )}
 
             {/* Méthode de paiement */}
@@ -313,51 +371,65 @@ export default function CartPage() {
                 onPhoneNumberChange={setPhoneNumber}
                 showPhoneInput={true}
               />
+              
+              {paymentMethod === 'cash' && (
+                <InfoCard
+                  icon="💵"
+                  title="Paiement en espèces"
+                  description="Vous paierez en espèces lors de la livraison. Le livreur vous contactera pour confirmer l'adresse et le montant exact."
+                  variant="info"
+                  className="mt-4"
+                />
+              )}
             </div>
 
             {/* Adresse de livraison */}
-            <div className="mb-6 pb-6 border-b border-gray-200">
-              <label htmlFor="deliveryAddress" className="block text-sm font-semibold text-gray-700 mb-2">
-                📍 Adresse de livraison <span className="text-gray-500 text-xs font-normal">(optionnel)</span>
-              </label>
-              <textarea
+            <FormField
+              label="📍 Adresse de livraison"
+              htmlFor="deliveryAddress"
+              hint="Indiquez votre adresse complète pour faciliter la livraison"
+              className="mb-6 pb-6 border-b border-gray-200"
+            >
+              <Textarea
                 id="deliveryAddress"
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
                 placeholder="Ex: Avenue X, Quartier Y, Commune Z, Ville"
                 rows={3}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all resize-none text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Indiquez votre adresse complète pour faciliter la livraison
-              </p>
-            </div>
+            </FormField>
 
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-gray-600">
-                <span>Sous-total</span>
-                <span className="font-semibold">{formatPrice(Math.round(subtotal * 100), 'USD')}</span>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-600">Sous-total ({items.length} {items.length > 1 ? 'articles' : 'article'})</span>
+                <span className="font-semibold text-gray-900">{formatPrice(Math.round(subtotal * 100), 'USD')}</span>
               </div>
               {couponDiscount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Réduction</span>
-                  <span className="font-semibold">-{formatPrice(Math.round(couponDiscount * 100), 'USD')}</span>
+                <div className="flex justify-between items-center py-2 bg-green-50 rounded-lg px-3">
+                  <span className="text-green-700 font-medium">Réduction</span>
+                  <span className="font-bold text-green-700">-{formatPrice(Math.round(couponDiscount * 100), 'USD')}</span>
                 </div>
               )}
-              <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t border-gray-200">
+              <div className="flex justify-between items-center text-2xl font-black text-gray-900 pt-4 border-t-2 border-gray-200 mt-4">
                 <span>Total</span>
-                <span>{formatPrice(Math.round(finalTotal * 100), 'USD')}</span>
+                <span className="bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                  {formatPrice(Math.round(finalTotal * 100), 'USD')}
+                </span>
               </div>
             </div>
 
             {/* Bouton Commander via WhatsApp */}
             <button
               onClick={() => {
-                const profile = user ? {
-                  full_name: user.user_metadata?.full_name || '',
-                  phone: user.user_metadata?.phone || phoneNumber || '',
-                  email: user.email || '',
-                } : null
+                const customerNameValue = user 
+                  ? (user.user_metadata?.full_name || '')
+                  : customerName.trim()
+                const customerPhoneValue = user
+                  ? (user.user_metadata?.phone || phoneNumber.trim())
+                  : phoneNumber.trim()
+                const customerEmailValue = user
+                  ? (user.email || '')
+                  : customerEmail.trim()
 
                 openWhatsAppOrder({
                   items: items.map(item => ({
@@ -372,9 +444,9 @@ export default function CartPage() {
                   total: finalTotal,
                   currency: 'USD',
                   deliveryAddress: deliveryAddress.trim() || undefined,
-                  customerName: profile?.full_name || undefined,
-                  customerPhone: profile?.phone || phoneNumber || undefined,
-                  customerEmail: profile?.email || undefined,
+                  customerName: customerNameValue || undefined,
+                  customerPhone: customerPhoneValue || undefined,
+                  customerEmail: customerEmailValue || undefined,
                   paymentMethod: paymentMethod || undefined,
                 })
               }}

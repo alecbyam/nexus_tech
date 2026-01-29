@@ -16,6 +16,22 @@
 
 html {
   scroll-behavior: smooth;
+  /* Optimisation pour mobile */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Optimisations de performance */
+@media (max-width: 640px) {
+  /* Réduire les animations sur mobile */
+  * {
+    will-change: auto !important;
+  }
+  
+  /* Optimiser les transitions */
+  .transition-all {
+    transition-property: opacity, transform, background-color !important;
+  }
 }
 
 html,
@@ -32,6 +48,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Optimisation pour mobile */
+  text-rendering: optimizeSpeed;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -81,12 +100,55 @@ a {
   }
 }
 
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
 
 .animate-slide-in {
   animation: slideIn 0.4s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+.animate-slide-in-from-right {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
 }
 
 /* Glass morphism effect */
@@ -108,7 +170,94 @@ a {
 /* Card hover effect */
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}.card-hover:hover {
+}
+
+.card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Smooth transitions for interactive elements */
+button, a, input, select, textarea {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid #0B5FFF;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: rgba(11, 95, 255, 0.1);
+  }
+  
+  /* Réduire les animations sur mobile pour améliorer les performances */
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Optimiser les transitions sur mobile */
+  * {
+    transition-duration: 0.15s !important;
+  }
+  
+  /* Désactiver les animations complexes sur mobile */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Optimisations de performance pour mobile */
+@media (max-width: 640px) {
+  /* Réduire les ombres sur mobile */
+  .shadow-lg, .shadow-xl, .shadow-2xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  }
+  
+  /* Optimiser les backdrop filters sur mobile */
+  .backdrop-blur-md, .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+}
+
+/* Improved loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
 }

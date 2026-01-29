@@ -12,6 +12,11 @@ import { StockNotificationButton } from '@/components/stock-notification-button'
 import { ProductReviews } from '@/components/product-reviews'
 import { addToBrowsingHistory } from '@/lib/services/browsing-history'
 import { formatPrice } from '@/lib/utils/format-price'
+import { useToast } from '@/components/toast'
+import { Breadcrumbs } from '@/components/breadcrumbs'
+import { FormField } from '@/components/form-field'
+import { QuantitySelector } from '@/components/quantity-selector'
+import { useRouter } from 'next/navigation'
 
 interface ProductDetailProps {
   product: {
@@ -38,6 +43,8 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
   const addItem = useCartStore((state) => state.addItem)
   const { user } = useAuth()
   const sessionId = useSessionId()
+  const toast = useToast()
+  const router = useRouter()
   const supabase = createSupabaseClient()
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
@@ -49,7 +56,7 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
       try {
         // Track product view
         try {
-          await supabase.from('product_views').insert({
+          await (supabase.from('product_views') as any).insert({
             product_id: product.id,
             user_id: user?.id || null,
             session_id: sessionId || null,
@@ -96,13 +103,27 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
     : 0
 
   const handleAddToCart = () => {
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: product.price_cents / 100,
-      imageUrl,
-    })
+    if (product.stock === 0) {
+      toast.showToast('Ce produit est en rupture de stock', 'warning')
+      return
+    }
+    
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        productId: product.id,
+        name: product.name,
+        price: product.price_cents / 100,
+        imageUrl,
+      })
+    }
+    
     setAdded(true)
+    toast.showToast(
+      quantity > 1 
+        ? `${quantity} articles ajoutés au panier` 
+        : 'Article ajouté au panier',
+      'success'
+    )
     setTimeout(() => setAdded(false), 2000)
   }
 
@@ -115,20 +136,29 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
   }
 
+  const breadcrumbs = [
+    { label: 'Catalogue', href: '/catalog' },
+    { label: product.categories?.name || 'Produit', href: `/catalog` },
+    { label: product.name },
+  ]
+
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
-      <div className="grid md:grid-cols-2 gap-10 bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+    <div className="max-w-6xl mx-auto animate-fade-in px-3 sm:px-4">
+      <Breadcrumbs items={breadcrumbs} className="mb-4 sm:mb-6" />
+      
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6 md:gap-10 bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl sm:shadow-2xl p-4 sm:p-6 md:p-8 lg:p-12 border border-gray-100">
         {/* Images */}
-        <div className="space-y-4">
-          <div className="aspect-square relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg">
+        <div className="space-y-2 sm:space-y-4">
+          <div className="aspect-square relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
             {currentImage && (
               <Image
                 src={imageUrl}
                 alt={product.name}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, 50vw"
                 priority
+                quality={90}
               />
             )}
             {product.is_refurbished && (
@@ -148,7 +178,7 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
           
           {/* Miniatures */}
           {sortedImages.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-4 gap-1.5 sm:gap-2">
               {sortedImages.map((img, index) => {
                 const thumbUrl = supabaseUrl
                   ? `${supabaseUrl}/storage/v1/object/public/product-images/${img.storage_path}`
@@ -185,30 +215,30 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
                 {product.categories?.name}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-3 sm:mb-4 leading-tight px-2 sm:px-0">
               {product.name}
             </h1>
 
             {product.description && (
-              <p className="text-gray-600 mb-8 text-lg leading-relaxed">{product.description}</p>
+              <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg leading-relaxed px-2 sm:px-0">{product.description}</p>
             )}
 
-            <div className="mb-8 p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-2xl border border-primary-100">
-              <div className="flex items-baseline gap-4 mb-3">
+            <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl sm:rounded-2xl border border-primary-100">
+              <div className="flex items-baseline gap-2 sm:gap-4 mb-2 sm:mb-3 flex-wrap">
                 {hasDiscount ? (
                   <>
-                    <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                    <span className="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
                       {formatPrice(product.price_cents, product.currency || 'USD')}
                     </span>
-                    <span className="text-3xl text-gray-400 line-through">
+                    <span className="text-xl sm:text-2xl md:text-3xl text-gray-400 line-through">
                       {formatPrice(product.compare_at_price_cents!, product.currency || 'USD')}
                     </span>
-                    <span className="bg-red-500 text-white px-3 py-1 rounded-lg font-bold text-sm">
+                    <span className="bg-red-500 text-white px-2 sm:px-3 py-1 rounded-lg font-bold text-xs sm:text-sm">
                       -{discountPercent}%
                     </span>
                   </>
                 ) : (
-                  <span className="text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                  <span className="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
                     {formatPrice(product.price_cents, product.currency || 'USD')}
                   </span>
                 )}
@@ -226,28 +256,29 @@ export const ProductDetail = memo(function ProductDetail({ product }: ProductDet
           <div className="space-y-4">
             {product.stock > 0 && (
               <>
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <label className="font-bold text-gray-900">Quantité:</label>
-                  <input
-                    type="number"
-                    min="1"
+                <FormField label="Quantité" htmlFor="quantity">
+                  <QuantitySelector
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-24 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-semibold text-center"
+                    onChange={setQuantity}
+                    min={1}
+                    max={product.stock}
+                    size="lg"
                   />
-                </div>
+                </FormField>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <button
                     onClick={handleAddToCart}
-                    disabled={added}
-                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:from-green-500 disabled:to-green-600 disabled:transform-none"
+                    disabled={added || product.stock === 0}
+                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:from-green-500 disabled:to-green-600 disabled:transform-none disabled:opacity-50"
+                    aria-label={`Ajouter ${quantity} ${product.name} au panier`}
                   >
                     {added ? '✓ Ajouté au panier' : 'Ajouter au panier'}
                   </button>
                   <button
                     onClick={handleWhatsApp}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
+                    aria-label={`Contacter via WhatsApp pour ${product.name}`}
                   >
                     📱 WhatsApp
                   </button>

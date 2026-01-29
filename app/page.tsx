@@ -43,7 +43,9 @@ export default async function HomePage() {
           <p className="text-gray-600 text-center mb-8">
             Explorez notre sélection de produits tech
           </p>
-        </div>        <Suspense fallback={<LoadingSpinner size="lg" text="Chargement des catégories..." />}>
+        </div>
+
+        <Suspense fallback={<LoadingSpinner size="lg" text="Chargement des catégories..." />}>
           <CategoriesSection />
         </Suspense>
       </main>

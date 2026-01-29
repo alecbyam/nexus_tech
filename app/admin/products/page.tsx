@@ -213,7 +213,9 @@ export default function AdminProductsPage() {
                 <div className="text-sm text-gray-600">USD</div>
               </div>
             </div>
-          </div>          {/* Filtres et Recherche */}
+          </div>
+
+          {/* Filtres et Recherche */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
             <div className="grid md:grid-cols-2 gap-4">
               <div>

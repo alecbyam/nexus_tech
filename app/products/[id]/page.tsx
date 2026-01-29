@@ -2,6 +2,9 @@ import { createServerClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ProductDetail } from '@/components/product-detail'
 import { Header } from '@/components/header'
+import { ProductDetailSkeleton } from '@/components/skeleton-loader'
+import { Suspense } from 'react'
+import { Breadcrumbs } from '@/components/breadcrumbs'
 
 // Force dynamic rendering (Header uses client components)
 export const dynamic = 'force-dynamic'
@@ -39,7 +42,9 @@ export default async function ProductPage({
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <ProductDetail product={product as any} />
+        <Suspense fallback={<ProductDetailSkeleton />}>
+          <ProductDetail product={product as any} />
+        </Suspense>
       </main>
     </div>
   )

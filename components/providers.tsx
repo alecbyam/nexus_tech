@@ -32,7 +32,8 @@ interface RoleCache {
 }
 
 const roleCache = new Map<string, RoleCache>()
-const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes (augmenté pour réduire les requêtes)
+const ROLE_REFRESH_INTERVAL = 5 * 60 * 1000 // Rafraîchissement toutes les 5 minutes
 
 // Fonction pour sauvegarder dans localStorage
 function saveRoleCacheToStorage(userId: string, role: UserRole) {
@@ -86,6 +87,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
     return createSupabaseClient()
   }, [])
+  
+  // useRouter doit être appelé même si on retourne tôt
   const router = useRouter()
 
   // Calculer isAdmin à partir du rôle (pour compatibilité)
@@ -153,10 +156,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
         const expiredCache = roleCache.get(userId)
         const localStorageCache = loadRoleCacheFromStorage(userId)
         
+        // Prioriser le cache admin même expiré pour éviter la perte du rôle admin
         if (expiredCache) {
           console.log('[Auth] Using expired memory cache due to error:', expiredCache.role)
           setRole(expiredCache.role)
           setLoading(false)
+          // Si c'est un admin, prolonger le cache même expiré
+          if (expiredCache.role === 'admin') {
+            roleCache.set(userId, { role: expiredCache.role, timestamp: Date.now() })
+            saveRoleCacheToStorage(userId, expiredCache.role)
+          }
           return
         }
         
@@ -165,15 +174,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
           setRole(localStorageCache)
           setLoading(false)
           roleCache.set(userId, { role: localStorageCache, timestamp: Date.now() })
+          // Si c'est un admin, s'assurer qu'il persiste
+          if (localStorageCache === 'admin') {
+            saveRoleCacheToStorage(userId, localStorageCache)
+          }
           return
         }
         
-        // Dernier recours : rôle par défaut
+        // Dernier recours : rôle par défaut (mais ne pas écraser un rôle admin existant)
         console.warn('[Auth] No cache available, defaulting to client')
-        setRole('client')
-        const cacheValue = { role: 'client' as UserRole, timestamp: Date.now() }
-        roleCache.set(userId, cacheValue)
-        saveRoleCacheToStorage(userId, 'client')
+        // Ne pas définir 'client' si on avait un rôle admin avant (éviter la perte)
+        const currentRole = role
+        if (currentRole !== 'admin') {
+          setRole('client')
+          const cacheValue = { role: 'client' as UserRole, timestamp: Date.now() }
+          roleCache.set(userId, cacheValue)
+          saveRoleCacheToStorage(userId, 'client')
+        }
       } else {
         const userRole = (data?.role as UserRole) || 'client'
         console.log('[Auth] Role fetched from database:', userRole)
@@ -182,6 +199,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         const cacheValue = { role: userRole, timestamp: Date.now() }
         roleCache.set(userId, cacheValue)
         saveRoleCacheToStorage(userId, userRole)
+        
+        // Si le rôle est admin, s'assurer qu'il persiste même en cas d'erreur future
+        if (userRole === 'admin') {
+          console.log('[Auth] Admin role confirmed, ensuring persistence')
+        }
       }
     } catch (error: any) {
       console.error('[Auth] Exception checking user role:', error)
@@ -235,6 +257,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (!supabase) return
     
     let mounted = true
+    let roleRefreshInterval: NodeJS.Timeout | null = null
 
     // Get initial session (plus rapide avec cache)
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -251,6 +274,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
         // Toujours vérifier le rôle, même avec le cache
         // Le cache sera utilisé dans checkUserRole si disponible
         checkUserRole(session.user.id, true, false)
+        
+        // Configurer le rafraîchissement périodique du rôle (toutes les 5 minutes)
+        // Cela garantit que le rôle admin ne disparaît pas
+        roleRefreshInterval = setInterval(() => {
+          if (!mounted) return
+          // Utiliser une fonction pour obtenir l'utilisateur actuel depuis l'état
+          supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
+            if (!mounted || !currentUser) return
+            console.log('[Auth] Periodic role refresh for user:', currentUser.id)
+            // Vérifier si le cache est expiré ou proche de l'expiration
+            const cached = roleCache.get(currentUser.id)
+            const cacheExpired = !cached || (Date.now() - cached.timestamp) >= CACHE_DURATION * 0.8 // Rafraîchir à 80% de la durée
+            
+            if (cacheExpired) {
+              console.log('[Auth] Cache expired or expiring soon, refreshing role')
+              checkUserRole(currentUser.id, false, true)
+            } else {
+              // Même si le cache est valide, vérifier périodiquement pour s'assurer que le rôle n'a pas changé
+              // Utiliser le cache mais forcer une vérification en arrière-plan
+              checkUserRole(currentUser.id, true, false)
+            }
+          }).catch(err => {
+            console.error('[Auth] Error getting user for periodic refresh:', err)
+          })
+        }, ROLE_REFRESH_INTERVAL) // Toutes les 5 minutes
       } else {
         setRole(null)
         setLoading(false)
@@ -263,6 +311,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
 
+      // Nettoyer l'intervalle précédent
+      if (roleRefreshInterval) {
+        clearInterval(roleRefreshInterval)
+        roleRefreshInterval = null
+      }
+
       setUser(session?.user ?? null)
       if (session?.user) {
         // Forcer le rechargement du rôle lors d'un changement d'auth
@@ -272,6 +326,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('role_cache')
         }
         await checkUserRole(session.user.id, false, true)
+        
+        // Configurer le rafraîchissement périodique pour le nouvel utilisateur
+        roleRefreshInterval = setInterval(() => {
+          if (!mounted) return
+          // Utiliser une fonction pour obtenir l'utilisateur actuel depuis l'état
+          supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
+            if (!mounted || !currentUser) return
+            console.log('[Auth] Periodic role refresh for user:', currentUser.id)
+            const cached = roleCache.get(currentUser.id)
+            const cacheExpired = !cached || (Date.now() - cached.timestamp) >= CACHE_DURATION * 0.8
+            
+            if (cacheExpired) {
+              console.log('[Auth] Cache expired or expiring soon, refreshing role')
+              checkUserRole(currentUser.id, false, true)
+            } else {
+              checkUserRole(currentUser.id, true, false)
+            }
+          }).catch(err => {
+            console.error('[Auth] Error getting user for periodic refresh:', err)
+          })
+        }, ROLE_REFRESH_INTERVAL) // Toutes les 5 minutes
       } else {
         setRole(null)
         setLoading(false)
@@ -283,9 +358,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     })
 
+    // Rafraîchir le rôle quand la fenêtre reprend le focus (utilisateur revient sur l'onglet)
+    const handleFocus = () => {
+      if (!mounted || !supabase) return
+      supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
+        if (!mounted || !currentUser) return
+        const cached = roleCache.get(currentUser.id)
+        // Si le cache est expiré ou proche de l'expiration, rafraîchir
+        if (!cached || (Date.now() - cached.timestamp) >= CACHE_DURATION * 0.7) {
+          console.log('[Auth] Window focused, refreshing role if needed')
+          checkUserRole(currentUser.id, false, true)
+        }
+      }).catch(err => {
+        console.error('[Auth] Error getting user on focus:', err)
+      })
+    }
+
+    // Écouter les événements de focus de la fenêtre
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleFocus)
+    }
+
     return () => {
       mounted = false
       subscription.unsubscribe()
+      if (roleRefreshInterval) {
+        clearInterval(roleRefreshInterval)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleFocus)
+      }
     }
   }, [supabase, checkUserRole])
 
@@ -305,8 +407,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('role_cache')
       }
-      router.push('/')
-      router.refresh()
+      if (router) {
+        router.push('/')
+        router.refresh()
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
     } catch (error) {
       console.error('Error signing out:', error)
       throw error
