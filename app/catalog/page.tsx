@@ -48,6 +48,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       categories(name, slug, id)
     `)
     .eq('is_active', true)
+    .gt('stock', 0) // Ne montrer que les produits en stock aux clients
 
   if (categoryId) {
     query = query.eq('category_id', categoryId)
@@ -67,7 +68,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     : [{ label: 'Catalogue' }]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <Header />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <PageHeader
@@ -76,7 +77,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           breadcrumbs={breadcrumbs}
         />
         
-        <div className="mb-4 sm:mb-6 md:mb-8">
+        <div className="mb-4 sm:mb-6 md:mb-8 animate-slide-up">
           <SearchBar initialSearch={search} initialCategory={categorySlug} />
         </div>
         

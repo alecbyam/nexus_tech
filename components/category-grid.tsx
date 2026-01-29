@@ -57,12 +57,15 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
           <Link
             key={category.id}
             href={`/catalog?category=${categorySlug}`}
-            className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            className="group relative bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.03] hover:-translate-y-2 border border-gray-100/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 animate-slide-up"
+            style={{ animationDelay: `${index * 0.05}s` }}
             aria-label={`Voir les produits de la catégorie ${category.name}`}
           >
+            {/* Gradient overlay on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/10 group-hover:to-indigo-500/10 transition-all duration-500 z-0"></div>
+            
             {/* Image de fond ou gradient */}
-            <div className="relative h-32 sm:h-40 md:h-48 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 group">
+            <div className="relative h-32 sm:h-40 md:h-48 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-gray-50 group-hover:to-gray-100 transition-all duration-500">
               <CategoryImage
                 imagePath={imagePath}
                 categoryName={category.name}
@@ -70,36 +73,39 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                 icon={category.icon}
               />
               
-              {/* Overlay au survol */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+              {/* Overlay au survol avec effet de brillance */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              {/* Shine effect */}
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
               
               {/* Badge icône si pas d'image */}
               {category.icon && !imagePath && (
-                <div className="absolute top-3 right-3 text-3xl opacity-90 transform group-hover:scale-110 transition-transform duration-300 z-10">
+                <div className="absolute top-3 right-3 text-3xl opacity-90 transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 z-10">
                   {category.icon}
                 </div>
               )}
             </div>
 
             {/* Contenu de la carte */}
-            <div className="p-3 sm:p-4 md:p-6 bg-white">
-              <h3 className="font-black text-gray-900 text-sm sm:text-base md:text-lg mb-1 sm:mb-2 group-hover:text-primary-600 transition-colors duration-200 line-clamp-2">
+            <div className="p-3 sm:p-4 md:p-6 bg-white/95 backdrop-blur-sm relative z-10">
+              <h3 className="font-black text-gray-900 text-sm sm:text-base md:text-lg mb-1 sm:mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-indigo-600 transition-all duration-300 line-clamp-2">
                 {category.name}
               </h3>
               {category.description && (
-                <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mb-2 sm:mb-3 hidden sm:block">
+                <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mb-2 sm:mb-3 hidden sm:block group-hover:text-gray-600 transition-colors">
                   {category.description}
                 </p>
               )}
               
-              {/* Ligne de progression au survol */}
-              <div className="h-1 w-0 group-hover:w-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 rounded-full" aria-hidden="true" />
+              {/* Ligne de progression au survol avec gradient */}
+              <div className="h-1.5 w-0 group-hover:w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-all duration-500 rounded-full shadow-lg shadow-blue-500/50" aria-hidden="true" />
               
               {/* Texte "Explorer" au survol */}
-              <div className="mt-2 sm:mt-4 text-xs sm:text-sm font-semibold text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 hidden sm:flex">
+              <div className="mt-2 sm:mt-4 text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 hidden sm:flex">
                 Explorer
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
             </div>

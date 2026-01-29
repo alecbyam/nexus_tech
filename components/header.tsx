@@ -26,7 +26,7 @@ export const Header = memo(function Header() {
   }
 
   return (
-    <header className="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-100">
+    <header className="glass sticky top-0 z-50 border-b border-gray-200/50 shadow-lg shadow-gray-900/5">
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-16 sm:h-20">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group">

@@ -28,8 +28,9 @@ export default async function ProductPage({
       stock,
       is_refurbished,
       condition,
+      category_id,
       product_images(storage_path, is_primary),
-      categories(name, slug)
+      categories(name, slug, id)
     `)
     .eq('id', params.id)
     .single()
@@ -39,9 +40,9 @@ export default async function ProductPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <Suspense fallback={<ProductDetailSkeleton />}>
           <ProductDetail product={product as any} />
         </Suspense>

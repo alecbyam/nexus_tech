@@ -467,6 +467,7 @@ export default function CartPage() {
 
             {/* Bouton Checkout classique */}
             <button
+              disabled={loading}
               onClick={handleCheckout}
               disabled={loading || !user || !paymentMethod}
               className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"

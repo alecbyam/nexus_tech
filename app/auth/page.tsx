@@ -6,6 +6,8 @@ import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/components/providers'
+import { BackButton } from '@/components/back-button'
+import { Header } from '@/components/header'
 
 // Force dynamic rendering (cannot be statically generated)
 export const dynamic = 'force-dynamic'

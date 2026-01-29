@@ -106,17 +106,18 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   const Icon = icons[toast.type]
 
-  return (
-    <div
-      className={`
-        ${colors[toast.type]}
-        border-2 rounded-xl shadow-xl p-4 flex items-start gap-3
-        animate-slide-in pointer-events-auto
-        backdrop-blur-sm
-      `}
-      role="alert"
-      aria-live="polite"
-    >
+        return (
+          <div
+            className={`
+              ${colors[toast.type]}
+              border-2 rounded-2xl shadow-2xl p-4 flex items-start gap-3
+              animate-slide-in pointer-events-auto
+              backdrop-blur-md
+              transform transition-all duration-300 hover:scale-105
+            `}
+            role="alert"
+            aria-live="polite"
+          >
       <Icon className={`w-6 h-6 flex-shrink-0 ${iconColors[toast.type]}`} />
       <p className="flex-1 font-medium text-sm leading-relaxed">{toast.message}</p>
       <button

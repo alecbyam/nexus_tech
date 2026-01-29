@@ -48,6 +48,12 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
     queryBuilder = queryBuilder.eq('is_active', isActive)
   }
 
+  // Par défaut, ne montrer que les produits en stock aux clients
+  // Les admins peuvent voir tous les produits via les pages admin
+  if (isActive !== false) {
+    queryBuilder = queryBuilder.gt('stock', 0)
+  }
+
   if (categoryId) {
     queryBuilder = queryBuilder.eq('category_id', categoryId)
   }
