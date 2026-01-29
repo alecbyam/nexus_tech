@@ -66,45 +66,41 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      // Créer le compte
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.full_name || null,
-            phone: formData.phone || null,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      // Créer le compte via l'API (sans confirmation email)
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name || undefined,
+          phone: formData.phone || undefined,
+        }),
       })
 
-      if (authError) {
-        throw authError
+      const json = await res.json()
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Erreur lors de la création du compte')
       }
 
-      if (authData.user) {
-        // Mettre à jour le profil avec les informations supplémentaires
-        if (formData.full_name || formData.phone) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              full_name: formData.full_name || null,
-              phone: formData.phone || null,
-            })
-            .eq('id', authData.user.id)
+      // Connecter automatiquement l'utilisateur après création
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
 
-          if (profileError) {
-            console.error('Error updating profile:', profileError)
-          }
-        }
-
-        setSuccess(true)
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push('/auth?message=check_email')
-        }, 2000)
+      if (signInError) {
+        // Si la connexion automatique échoue, rediriger vers la page de connexion
+        router.push('/auth?message=account_created')
+        return
       }
+
+      setSuccess(true)
+      // Rediriger vers la page d'accueil après 1 seconde
+      setTimeout(() => {
+        router.push('/')
+      }, 1000)
     } catch (err: any) {
       console.error('Signup error:', err)
       setError(err.message || 'Une erreur est survenue lors de l\'inscription')
@@ -124,10 +120,10 @@ export default function SignUpPage() {
               Compte créé avec succès !
             </h2>
             <p className="text-gray-600 mb-6">
-              Un email de confirmation a été envoyé à <strong>{formData.email}</strong>
+              Votre compte a été créé et vous êtes maintenant connecté.
             </p>
             <p className="text-sm text-gray-500">
-              Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation.
+              Redirection en cours...
             </p>
           </div>
         </div>

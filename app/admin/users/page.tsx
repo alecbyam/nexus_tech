@@ -234,8 +234,13 @@ function AdminUsersPageContent() {
           </div>
 
           {showCreateForm && (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Créer un utilisateur</h2>
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6 animate-fade-in">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Créer un utilisateur</h2>
+                <div className="text-xs text-gray-500 bg-blue-50 px-3 py-1 rounded-full">
+                  ✓ Compte créé sans confirmation email
+                </div>
+              </div>
 
               {createError && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-semibold">
@@ -243,8 +248,14 @@ function AdminUsersPageContent() {
                 </div>
               )}
               {createSuccess && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-semibold">
-                  {createSuccess}
+                <div className="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-sm text-green-700 font-semibold">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {createSuccess}
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">Le compte a été créé sans confirmation email requise.</p>
                 </div>
               )}
 
