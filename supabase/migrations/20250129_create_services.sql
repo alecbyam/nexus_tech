@@ -110,25 +110,25 @@ INSERT INTO public.services (title, category, description, price_estimate, durat
 -- A) Smartphone Services
 ('Configuration téléphone', 'smartphone', 'Configuration complète de votre téléphone (paramètres, connexions, etc.)', '5000-10000 CDF', '30-45 min', 1),
 ('Configuration Internet/APN', 'smartphone', 'Configuration de la connexion Internet et APN pour votre opérateur', '3000-5000 CDF', '15-20 min', 2),
-('Création compte Gmail', 'smartphone', 'Création et configuration d\'un compte Gmail', '2000-3000 CDF', '10-15 min', 3),
+('Création compte Gmail', 'smartphone', 'Création et configuration d''un compte Gmail', '2000-3000 CDF', '10-15 min', 3),
 ('Assistance compte iCloud', 'smartphone', 'Configuration et assistance pour compte iCloud (avec identifiants client)', '5000-8000 CDF', '20-30 min', 4),
 ('Transfert de données', 'smartphone', 'Transfert de données entre appareils (contacts, photos, fichiers)', '10000-15000 CDF', '1-2 heures', 5),
 ('Sauvegarde et restauration', 'smartphone', 'Sauvegarde complète et restauration de vos données', '8000-12000 CDF', '45-60 min', 6),
-('Installation d\'applications', 'smartphone', 'Installation et configuration d\'applications', '3000-5000 CDF', '20-30 min', 7),
+('Installation d''applications', 'smartphone', 'Installation et configuration d''applications', '3000-5000 CDF', '20-30 min', 7),
 ('Configuration WhatsApp/Facebook/TikTok', 'smartphone', 'Configuration et assistance pour réseaux sociaux', '5000-8000 CDF', '30-45 min', 8),
 ('Déverrouillage code/motif', 'smartphone', 'Déverrouillage de code PIN ou motif (si propriétaire)', '10000-20000 CDF', '30-60 min', 9),
-('Réinitialisation usine', 'smartphone', 'Réinitialisation complète du téléphone aux paramètres d\'usine', '5000-8000 CDF', '20-30 min', 10),
-('Mise à jour Android/iOS', 'smartphone', 'Mise à jour du système d\'exploitation', '5000-10000 CDF', '30-60 min', 11),
+('Réinitialisation usine', 'smartphone', 'Réinitialisation complète du téléphone aux paramètres d''usine', '5000-8000 CDF', '20-30 min', 10),
+('Mise à jour Android/iOS', 'smartphone', 'Mise à jour du système d''exploitation', '5000-10000 CDF', '30-60 min', 11),
 ('Suppression virus et publicités', 'smartphone', 'Nettoyage et suppression de virus, malwares et publicités', '10000-15000 CDF', '45-60 min', 12),
-('Optimisation stockage et vitesse', 'smartphone', 'Optimisation de l\'espace de stockage et de la vitesse', '8000-12000 CDF', '30-45 min', 13),
+('Optimisation stockage et vitesse', 'smartphone', 'Optimisation de l''espace de stockage et de la vitesse', '8000-12000 CDF', '30-45 min', 13),
 
 -- B) Computer Services
 ('Installation Windows/Linux', 'computer', 'Installation complète de Windows ou Linux', '20000-30000 CDF', '2-3 heures', 14),
-('Réinstallation système', 'computer', 'Réinstallation complète du système d\'exploitation', '25000-35000 CDF', '2-4 heures', 15),
+('Réinstallation système', 'computer', 'Réinstallation complète du système d''exploitation', '25000-35000 CDF', '2-4 heures', 15),
 ('Installation Microsoft Office', 'computer', 'Installation et activation de Microsoft Office', '15000-20000 CDF', '30-45 min', 16),
-('Installation antivirus', 'computer', 'Installation et configuration d\'un antivirus', '10000-15000 CDF', '20-30 min', 17),
+('Installation antivirus', 'computer', 'Installation et configuration d''un antivirus', '10000-15000 CDF', '20-30 min', 17),
 ('Mise à jour pilotes', 'computer', 'Mise à jour de tous les pilotes système', '15000-20000 CDF', '1-2 heures', 18),
-('Nettoyage PC (système lent)', 'computer', 'Nettoyage complet et optimisation d\'un PC lent', '20000-30000 CDF', '2-3 heures', 19),
+('Nettoyage PC (système lent)', 'computer', 'Nettoyage complet et optimisation d''un PC lent', '20000-30000 CDF', '2-3 heures', 19),
 ('Suppression virus/malware', 'computer', 'Détection et suppression de virus et malwares', '25000-35000 CDF', '2-4 heures', 20),
 ('Diagnostic matériel/logiciel', 'computer', 'Diagnostic complet du matériel et des logiciels', '15000-25000 CDF', '1-2 heures', 21),
 ('Récupération de fichiers', 'computer', 'Récupération de fichiers supprimés ou perdus', '30000-50000 CDF', '2-6 heures', 22),
@@ -138,28 +138,28 @@ INSERT INTO public.services (title, category, description, price_estimate, durat
 -- C) Internet & Accounts
 ('Configuration Wi-Fi', 'internet_accounts', 'Configuration de connexion Wi-Fi sur vos appareils', '5000-8000 CDF', '20-30 min', 25),
 ('Configuration routeur', 'internet_accounts', 'Configuration complète de votre routeur Internet', '15000-25000 CDF', '1-2 heures', 26),
-('Création email professionnel', 'internet_accounts', 'Création d\'un email professionnel (Gmail, Outlook, etc.)', '10000-15000 CDF', '30-45 min', 27),
+('Création email professionnel', 'internet_accounts', 'Création d''un email professionnel (Gmail, Outlook, etc.)', '10000-15000 CDF', '30-45 min', 27),
 ('Création comptes réseaux sociaux', 'internet_accounts', 'Création de comptes sur les réseaux sociaux', '8000-12000 CDF', '30-45 min', 28),
-('Sécurité compte (2FA)', 'internet_accounts', 'Configuration de l\'authentification à deux facteurs', '5000-8000 CDF', '20-30 min', 29),
+('Sécurité compte (2FA)', 'internet_accounts', 'Configuration de l''authentification à deux facteurs', '5000-8000 CDF', '20-30 min', 29),
 
 -- D) Web & Design
-('Création site web', 'web_design', 'Création d\'un site web professionnel', '500000-2000000 CDF', 'Variable', 30),
-('Création boutique en ligne', 'web_design', 'Création d\'une boutique e-commerce complète', '1000000-3000000 CDF', 'Variable', 31),
-('Création application mobile', 'web_design', 'Développement d\'une application mobile', '2000000-5000000 CDF', 'Variable', 32),
-('Design logo', 'web_design', 'Création d\'un logo professionnel', '50000-200000 CDF', '2-5 jours', 33),
+('Création site web', 'web_design', 'Création d''un site web professionnel', '500000-2000000 CDF', 'Variable', 30),
+('Création boutique en ligne', 'web_design', 'Création d''une boutique e-commerce complète', '1000000-3000000 CDF', 'Variable', 31),
+('Création application mobile', 'web_design', 'Développement d''une application mobile', '2000000-5000000 CDF', 'Variable', 32),
+('Design logo', 'web_design', 'Création d''un logo professionnel', '50000-200000 CDF', '2-5 jours', 33),
 ('Flyers et affiches', 'web_design', 'Création de flyers et affiches publicitaires', '30000-100000 CDF', '1-3 jours', 34),
 ('Gestion page Facebook business', 'web_design', 'Création et gestion de page Facebook professionnelle', '50000-150000 CDF', 'Variable', 35),
 
 -- E) Technical
-('Installation protection écran', 'technical', 'Installation de protection d\'écran (film)', '5000-15000 CDF', '10-15 min', 36),
+('Installation protection écran', 'technical', 'Installation de protection d''écran (film)', '5000-15000 CDF', '10-15 min', 36),
 ('Remplacement coque', 'technical', 'Remplacement de la coque de protection', '10000-20000 CDF', '15-20 min', 37),
 ('Remplacement batterie', 'technical', 'Remplacement de la batterie', '30000-80000 CDF', '30-60 min', 38),
-('Remplacement écran', 'technical', 'Remplacement de l\'écran endommagé', '50000-200000 CDF', '1-2 heures', 39),
+('Remplacement écran', 'technical', 'Remplacement de l''écran endommagé', '50000-200000 CDF', '1-2 heures', 39),
 ('Diagnostic appareil', 'technical', 'Diagnostic complet de votre appareil', '10000-20000 CDF', '30-45 min', 40),
 
 -- F) Training
-('Formation informatique de base', 'training', 'Formation aux bases de l\'informatique', '50000-100000 CDF', '10-20 heures', 41),
-('Formation smartphone', 'training', 'Formation complète sur l\'utilisation d\'un smartphone', '30000-60000 CDF', '5-10 heures', 42),
+('Formation informatique de base', 'training', 'Formation aux bases de l''informatique', '50000-100000 CDF', '10-20 heures', 41),
+('Formation smartphone', 'training', 'Formation complète sur l''utilisation d''un smartphone', '30000-60000 CDF', '5-10 heures', 42),
 ('Formation Office', 'training', 'Formation Microsoft Office (Word, Excel, PowerPoint)', '60000-120000 CDF', '15-25 heures', 43),
 ('Coaching business digital', 'training', 'Coaching pour développer votre business en ligne', '100000-200000 CDF', 'Variable', 44);
 
