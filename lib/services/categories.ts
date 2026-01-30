@@ -57,27 +57,43 @@ export async function getCategoryTree() {
 
 /**
  * Récupère une catégorie par son slug (server-side)
+ * Gère la fusion smartphones/telephones -> phones
  */
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const supabase = await createServerClient()
   
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single()
+  // Si on cherche "phones", chercher aussi "smartphones" et "telephones"
+  const searchSlugs = slug === 'phones' 
+    ? ['phones', 'smartphones', 'telephones']
+    : [slug]
+  
+  // Essayer chaque slug
+  for (const searchSlug of searchSlugs) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', searchSlug)
+      .eq('is_active', true)
+      .maybeSingle()
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // Aucun résultat trouvé
-      return null
+    if (!error && data) {
+      const category = data as Category
+      // Si on a trouvé une catégorie téléphone/smartphone mais qu'on cherche "phones",
+      // retourner une catégorie normalisée
+      if (slug === 'phones' && (searchSlug === 'smartphones' || searchSlug === 'telephones')) {
+        return {
+          ...category,
+          slug: 'phones',
+          key: 'phones',
+          name: 'Téléphones & Smartphones',
+        }
+      }
+      return category
     }
-    console.error('Error fetching category by slug:', error)
-    throw new Error(`Failed to fetch category by slug: ${error.message}`)
   }
 
-  return data as Category
+  // Aucun résultat trouvé
+  return null
 }
 
 /**

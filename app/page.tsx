@@ -53,10 +53,10 @@ export default async function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
             <Link
-              href="/catalog?category=smartphones"
+              href="/catalog?category=phones"
               className="inline-flex items-center justify-center bg-white/80 backdrop-blur-sm text-gray-900 px-6 py-4 rounded-2xl font-semibold text-base sm:text-lg border-2 border-gray-200 hover:border-blue-500 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              Voir les smartphones
+              Voir les téléphones
             </Link>
           </div>
         </div>

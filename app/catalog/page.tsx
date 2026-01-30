@@ -32,11 +32,42 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const { category: categorySlug, search } = searchParams
 
   // Si un slug de catégorie est fourni, récupérer la catégorie et ses sous-catégories
-  let categoryId: string | null = null
+  let categoryIds: string[] = []
   if (categorySlug) {
-    const category = await getCategoryBySlug(categorySlug)
-    if (category) {
-      categoryId = category.id
+    // Si on cherche "phones", chercher aussi dans smartphones et telephones
+    if (categorySlug === 'phones') {
+      const searchSlugs = ['phones', 'smartphones', 'telephones']
+      for (const slug of searchSlugs) {
+        const category = await getCategoryBySlug(slug)
+        if (category) {
+          categoryIds.push(category.id)
+        }
+      }
+      // Si on a trouvé des catégories, récupérer aussi leurs sous-catégories
+      if (categoryIds.length > 0) {
+        const { data: subcategories } = await supabase
+          .from('categories')
+          .select('id')
+          .in('parent_id', categoryIds)
+          .eq('is_active', true)
+        if (subcategories) {
+          categoryIds.push(...subcategories.map(c => c.id))
+        }
+      }
+    } else {
+      const category = await getCategoryBySlug(categorySlug)
+      if (category) {
+        categoryIds.push(category.id)
+        // Récupérer aussi les sous-catégories
+        const { data: subcategories } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('parent_id', category.id)
+          .eq('is_active', true)
+        if (subcategories) {
+          categoryIds.push(...subcategories.map(c => c.id))
+        }
+      }
     }
   }
 
@@ -50,8 +81,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     .eq('is_active', true)
     .gt('stock', 0) // Ne montrer que les produits en stock aux clients
 
-  if (categoryId) {
-    query = query.eq('category_id', categoryId)
+  if (categoryIds.length > 0) {
+    query = query.in('category_id', categoryIds)
   }
 
   if (search) {

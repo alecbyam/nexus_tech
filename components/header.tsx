@@ -67,6 +67,12 @@ export const Header = memo(function Header() {
             >
               Catalogue
             </Link>
+            <Link
+              href="/services"
+              className="text-gray-700 hover:text-primary-500 font-medium transition-all duration-200 hover:scale-105"
+            >
+              Services
+            </Link>
 
             {user && (
               <>

@@ -94,6 +94,14 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             >
               Catalogue
             </Link>
+            
+            <Link
+              href="/services"
+              onClick={onClose}
+              className="block px-4 py-3 rounded-xl hover:bg-primary-50 text-gray-700 hover:text-primary-600 font-medium transition-colors"
+            >
+              Services
+            </Link>
 
             {user && (
               <>
