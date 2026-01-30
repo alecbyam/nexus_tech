@@ -1,4 +1,4 @@
--- Migration pour créer le système de services
+-- Migration pour créer le système de services (Version corrigée - Idempotente)
 -- Date: 2025-01-29
 
 -- 1. Créer la table services
@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS public.services (
     'training'
   )),
   description TEXT,
-  price_estimate TEXT, -- Peut être un prix fixe ou une fourchette (ex: "5000-10000 CDF")
-  duration_estimate TEXT, -- Durée estimée (ex: "30 minutes", "1-2 heures")
+  price_estimate TEXT,
+  duration_estimate TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS public.service_requests (
   customer_email TEXT,
   customer_phone TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled')),
-  notes TEXT, -- Notes du client
-  admin_notes TEXT, -- Notes internes (admin/staff)
+  notes TEXT,
+  admin_notes TEXT,
   estimated_price TEXT,
   final_price TEXT,
   completed_at TIMESTAMPTZ,
@@ -60,10 +60,12 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS services_set_updated_at ON public.services;
 CREATE TRIGGER services_set_updated_at
 BEFORE UPDATE ON public.services
 FOR EACH ROW EXECUTE FUNCTION public.set_services_updated_at();
 
+DROP TRIGGER IF EXISTS service_requests_set_updated_at ON public.service_requests;
 CREATE TRIGGER service_requests_set_updated_at
 BEFORE UPDATE ON public.service_requests
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
@@ -73,9 +75,11 @@ ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_requests ENABLE ROW LEVEL SECURITY;
 
 -- 6. Politiques RLS pour services (lecture publique, écriture admin)
+DROP POLICY IF EXISTS "Services are viewable by everyone" ON public.services;
 CREATE POLICY "Services are viewable by everyone" ON public.services
   FOR SELECT USING (is_active = true);
 
+DROP POLICY IF EXISTS "Admins can manage services" ON public.services;
 CREATE POLICY "Admins can manage services" ON public.services
   FOR ALL USING (
     EXISTS (
@@ -85,6 +89,7 @@ CREATE POLICY "Admins can manage services" ON public.services
   );
 
 -- 7. Politiques RLS pour service_requests
+DROP POLICY IF EXISTS "Users can view their own service requests" ON public.service_requests;
 CREATE POLICY "Users can view their own service requests" ON public.service_requests
   FOR SELECT USING (
     user_id = auth.uid() OR
@@ -94,9 +99,11 @@ CREATE POLICY "Users can view their own service requests" ON public.service_requ
     )
   );
 
+DROP POLICY IF EXISTS "Anyone can create service requests" ON public.service_requests;
 CREATE POLICY "Anyone can create service requests" ON public.service_requests
   FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admins and staff can update service requests" ON public.service_requests;
 CREATE POLICY "Admins and staff can update service requests" ON public.service_requests
   FOR UPDATE USING (
     EXISTS (
@@ -105,8 +112,9 @@ CREATE POLICY "Admins and staff can update service requests" ON public.service_r
     )
   );
 
--- 8. Insérer les services par défaut
-INSERT INTO public.services (title, category, description, price_estimate, duration_estimate, sort_order) VALUES
+-- 8. Insérer les services par défaut (ignorer les doublons)
+INSERT INTO public.services (title, category, description, price_estimate, duration_estimate, sort_order)
+SELECT * FROM (VALUES
 -- A) Smartphone Services
 ('Configuration téléphone', 'smartphone', 'Configuration complète de votre téléphone (paramètres, connexions, etc.)', '5000-10000 CDF', '30-45 min', 1),
 ('Configuration Internet/APN', 'smartphone', 'Configuration de la connexion Internet et APN pour votre opérateur', '3000-5000 CDF', '15-20 min', 2),
@@ -161,7 +169,12 @@ INSERT INTO public.services (title, category, description, price_estimate, durat
 ('Formation informatique de base', 'training', 'Formation aux bases de l''informatique', '50000-100000 CDF', '10-20 heures', 41),
 ('Formation smartphone', 'training', 'Formation complète sur l''utilisation d''un smartphone', '30000-60000 CDF', '5-10 heures', 42),
 ('Formation Office', 'training', 'Formation Microsoft Office (Word, Excel, PowerPoint)', '60000-120000 CDF', '15-25 heures', 43),
-('Coaching business digital', 'training', 'Coaching pour développer votre business en ligne', '100000-200000 CDF', 'Variable', 44);
+('Coaching business digital', 'training', 'Coaching pour développer votre business en ligne', '100000-200000 CDF', 'Variable', 44)
+) AS v(title, category, description, price_estimate, duration_estimate, sort_order)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.services s 
+  WHERE s.title = v.title AND s.category = v.category
+);
 
 -- 9. Créer une vue pour les statistiques de services
 CREATE OR REPLACE VIEW public.service_stats AS
