@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header'
 import { Breadcrumbs } from '@/components/breadcrumbs'
 import { Suspense } from 'react'
 import { LoadingSpinner } from '@/components/loading-spinner'
+import { ContactWhatsAppButton } from '@/components/contact-whatsapp-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,11 @@ export default async function ServicesPage() {
           subtitle="Des solutions complètes pour tous vos besoins tech"
           breadcrumbs={breadcrumbs}
         />
+        
+        {/* Bouton de contact WhatsApp */}
+        <div className="mb-6 sm:mb-8 flex justify-center">
+          <ContactWhatsAppButton />
+        </div>
         
         <Suspense fallback={<LoadingSpinner size="lg" text="Chargement des services..." />}>
           <ServicesGrid services={services} />
