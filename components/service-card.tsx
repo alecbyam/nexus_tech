@@ -52,21 +52,13 @@ export function ServiceCard({ service, onRequest }: ServiceCardProps) {
           </p>
         )}
 
-        {/* Informations prix et durée */}
-        <div className="flex flex-wrap gap-3 mb-4 sm:mb-5">
-          {service.price_estimate && (
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <span className="text-gray-500">💰</span>
-              <span className="font-semibold text-gray-700">{service.price_estimate}</span>
-            </div>
-          )}
-          {service.duration_estimate && (
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <span className="text-gray-500">⏱️</span>
-              <span className="font-semibold text-gray-700">{service.duration_estimate}</span>
-            </div>
-          )}
-        </div>
+        {/* Informations durée uniquement (prix masqué pour les clients) */}
+        {service.duration_estimate && (
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm mb-4 sm:mb-5">
+            <span className="text-gray-500">⏱️</span>
+            <span className="font-semibold text-gray-700">{service.duration_estimate}</span>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -74,7 +66,7 @@ export function ServiceCard({ service, onRequest }: ServiceCardProps) {
             onClick={onRequest}
             className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Commander
+            Faire une demande
           </button>
           <button
             onClick={onRequest}

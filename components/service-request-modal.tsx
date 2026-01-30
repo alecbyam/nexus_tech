@@ -102,8 +102,8 @@ export function ServiceRequestModal({ service, onClose }: ServiceRequestModalPro
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}>
-                <div className="font-bold text-gray-900 mb-1">Commander</div>
-                <div className="text-sm text-gray-600">Demander le service immédiatement</div>
+                <div className="font-bold text-gray-900 mb-1">Faire une demande</div>
+                <div className="text-sm text-gray-600">Demander le service</div>
               </div>
             </label>
             <label className="flex-1 cursor-pointer">
@@ -169,20 +169,18 @@ export function ServiceRequestModal({ service, onClose }: ServiceRequestModalPro
             />
           </FormField>
 
-          {/* Informations du service */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <div className="text-sm font-semibold text-gray-700 mb-2">Informations du service</div>
-            {service.price_estimate && (
-              <div className="text-sm text-gray-600 mb-1">
-                <span className="font-semibold">Prix estimé:</span> {service.price_estimate}
-              </div>
-            )}
-            {service.duration_estimate && (
+          {/* Informations du service (prix masqué) */}
+          {service.duration_estimate && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="text-sm font-semibold text-gray-700 mb-2">Informations du service</div>
               <div className="text-sm text-gray-600">
                 <span className="font-semibold">Durée estimée:</span> {service.duration_estimate}
               </div>
-            )}
-          </div>
+              <div className="text-xs text-gray-500 mt-2">
+                💡 Un devis personnalisé vous sera fourni après votre demande
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -191,7 +189,7 @@ export function ServiceRequestModal({ service, onClose }: ServiceRequestModalPro
               disabled={loading}
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Envoi...' : formData.requestType === 'order' ? 'Confirmer la commande' : 'Envoyer la demande'}
+              {loading ? 'Envoi...' : formData.requestType === 'order' ? 'Envoyer la demande' : 'Demander un devis'}
             </button>
             <button
               type="button"
